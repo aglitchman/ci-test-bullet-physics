@@ -16,5 +16,9 @@ git add .
 # Get the next commit number by counting commits with "Update patch #" pattern
 COMMIT_COUNT=$(git log --oneline --grep="Update patch #" | wc -l)
 NEXT_NUMBER=$((COMMIT_COUNT + 1))
-git commit -m "Update patch #$NEXT_NUMBER"
+if [ $# -gt 0 ]; then
+    git commit -m "$1"
+else
+    git commit -m "Update patch #$NEXT_NUMBER"
+fi
 git push

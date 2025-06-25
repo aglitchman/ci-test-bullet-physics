@@ -2,9 +2,13 @@ function init(self)
 	print("Hello!")
 
 	print("angular_damping", go.get("/physics#collisionobject", "angular_damping"))
-	print("contact_processing_threshold", string.format("%.10f", go.get("/physics#collisionobject", "contact_processing_threshold")))
+
+	local v = go.get("/physics#collisionobject", "contact_processing_threshold")
+	print("contact_processing_threshold", string.format("%.10f", v))
+
 	go.set("/physics#collisionobject", "contact_processing_threshold", 0.001)
-	print("contact_processing_threshold", string.format("%.10f", go.get("/physics#collisionobject", "contact_processing_threshold")))
+	local new_v = go.get("/physics#collisionobject", "contact_processing_threshold")
+	print("contact_processing_threshold", string.format("%.10f", new_v))
 end
 
 function final(self)
