@@ -44,9 +44,11 @@ jobs:
         with:
           path: patch
 
-      - name: Apply patch
+      - name: Apply patch and remove the dir
+        shell: bash
         run: |
           git apply patch/all.patch
+          rm -rf patch
 
       - name: Download SDKs
         uses: actions/download-artifact@v4
@@ -89,6 +91,11 @@ jobs:
           path: |
             tmp/dynamo_home/bin/${{ matrix.platform }}
             tmp/dynamo_home/lib/${{ matrix.platform }}
+
+      - name: Checkout patch (for pushing)
+        uses: actions/checkout@v4
+        with:
+          path: patch
 
       - name: Copy engine libraries to the patch
         shell: bash

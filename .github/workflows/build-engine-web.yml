@@ -38,9 +38,11 @@ jobs:
         with:
           path: patch
 
-      - name: Apply patch
+      - name: Apply patch and remove the dir
+        shell: bash
         run: |
           git apply patch/all.patch
+          rm -rf patch
 
       - name: Install Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
@@ -84,6 +86,11 @@ jobs:
           path: |
             tmp/dynamo_home/bin/${{ matrix.platform }}
             tmp/dynamo_home/lib/${{ matrix.platform }}
+
+      - name: Checkout patch (for pushing)
+        uses: actions/checkout@v4
+        with:
+          path: patch
 
       - name: Copy engine libraries to the patch
         shell: bash
