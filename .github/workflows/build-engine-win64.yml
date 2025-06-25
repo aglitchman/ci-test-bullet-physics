@@ -110,4 +110,4 @@ jobs:
         uses: stefanzweifel/git-auto-commit-action@v6
         with:
           repository: patch
-          commit_message: Apply new libraries
+          commit_message: Apply new ${{ matrix.platform }} libraries

@@ -21,6 +21,5 @@ game_binding = /builtins/input/all.input_bindingc
 type = 3D
 use_fixed_timestep = 1
 max_fixed_timesteps = 0
-gravity_y = 0.0
 debug = 1
 
