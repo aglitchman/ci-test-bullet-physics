@@ -14,7 +14,7 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
 diff --git a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
-index 6b88707a93..db5fc697c1 100644
+index 6b88707a93..e867d75406 100644
 --- a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 +++ b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 @@ -77,6 +77,8 @@ namespace dmGameSystem
@@ -26,15 +26,10 @@ index 6b88707a93..db5fc697c1 100644
          PhysicsContextBullet3D* physics_context = (PhysicsContextBullet3D*) params.m_Context;
          if (params.m_MaxComponentInstances == 0 || physics_context->m_Context == 0x0)
          {
-@@ -598,6 +600,21 @@ namespace dmGameSystem
+@@ -598,6 +600,31 @@ namespace dmGameSystem
              out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularDamping3D(component->m_Object3D));
              return dmGameObject::PROPERTY_RESULT_OK;
          }
-+        else if (params.m_PropertyId == PROP_CONTACT_PROCESSING_THRESHOLD)
-+        {
-+            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetContactProcessingThreshold3D(component->m_Object3D));
-+            return dmGameObject::PROPERTY_RESULT_OK;
-+        }
 +        else if (params.m_PropertyId == PROP_LINEAR_FACTOR)
 +        {
 +            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetLinearFactor3D(component->m_Object3D));
@@ -45,10 +40,25 @@ index 6b88707a93..db5fc697c1 100644
 +            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularFactor3D(component->m_Object3D));
 +            return dmGameObject::PROPERTY_RESULT_OK;
 +        }
++        else if (params.m_PropertyId == PROP_CONTACT_PROCESSING_THRESHOLD)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetContactProcessingThreshold3D(component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
++        else if (params.m_PropertyId == PROP_LINEAR_SLEEPING_THRESHOLD)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetLinearSleepingThreshold3D(component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
++        else if (params.m_PropertyId == PROP_ANGULAR_SLEEPING_THRESHOLD)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularSleepingThreshold3D(component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
          return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
      }
  
-@@ -650,6 +667,33 @@ namespace dmGameSystem
+@@ -650,6 +677,51 @@ namespace dmGameSystem
          {
              return dmGameObject::PROPERTY_RESULT_READ_ONLY;
          }
@@ -79,14 +89,32 @@ index 6b88707a93..db5fc697c1 100644
 +            dmPhysics::SetAngularFactor3D(component->m_Object3D, dmVMath::Vector3(params.m_Value.m_V4[0], params.m_Value.m_V4[1], params.m_Value.m_V4[2]));
 +            return dmGameObject::PROPERTY_RESULT_OK;
 +        }
++        else if (params.m_PropertyId == PROP_LINEAR_SLEEPING_THRESHOLD)
++        {
++            if (params.m_Value.m_Type != dmGameObject::PROPERTY_TYPE_NUMBER)
++            {
++                return dmGameObject::PROPERTY_RESULT_TYPE_MISMATCH;
++            }
++            dmPhysics::SetLinearSleepingThreshold3D(component->m_Object3D, params.m_Value.m_Number);
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
++        else if (params.m_PropertyId == PROP_ANGULAR_SLEEPING_THRESHOLD)
++        {
++            if (params.m_Value.m_Type != dmGameObject::PROPERTY_TYPE_NUMBER)
++            {
++                return dmGameObject::PROPERTY_RESULT_TYPE_MISMATCH;
++            }
++            dmPhysics::SetAngularSleepingThreshold3D(component->m_Object3D, params.m_Value.m_Number);
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
          return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
      }
  
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
-index 2ec67baf3f..45598bff97 100644
+index 2ec67baf3f..23df6a61da 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
-@@ -20,12 +20,15 @@
+@@ -20,12 +20,23 @@
  
  namespace dmGameSystem
  {
@@ -102,17 +130,25 @@ index 2ec67baf3f..45598bff97 100644
 +    static const dmhash_t PROP_ANGULAR_VELOCITY             = dmHashString64("angular_velocity");
 +    static const dmhash_t PROP_MASS                         = dmHashString64("mass");
 +    static const dmhash_t PROP_BULLET                       = dmHashString64("bullet");
-+    static const dmhash_t PROP_LINEAR_FACTOR                = dmHashString64("linear_factor");
-+    static const dmhash_t PROP_ANGULAR_FACTOR               = dmHashString64("angular_factor");
-+    static const dmhash_t PROP_CONTACT_PROCESSING_THRESHOLD = dmHashString64("contact_processing_threshold");
++
++    // 3D-only properties
++    static const dmhash_t PROP_LINEAR_FACTOR                        = dmHashString64("linear_factor");
++    static const dmhash_t PROP_ANGULAR_FACTOR                       = dmHashString64("angular_factor");
++    static const dmhash_t PROP_CONTACT_PROCESSING_THRESHOLD         = dmHashString64("contact_processing_threshold");
++    static const dmhash_t PROP_LINEAR_SLEEPING_THRESHOLD            = dmHashString64("linear_sleeping_threshold");
++    static const dmhash_t PROP_ANGULAR_SLEEPING_THRESHOLD           = dmHashString64("angular_sleeping_threshold");
++    static const dmhash_t PROP_ADDITIONAL_DAMPING                   = dmHashString64("additional_damping");
++    static const dmhash_t PROP_ADDITIONAL_DAMPING_FACTOR            = dmHashString64("additional_damping_factor");
++    static const dmhash_t PROP_ADDITIONAL_LINEAR_DAMPING_THRESHOLD  = dmHashString64("additional_linear_damping_threshold");
++    static const dmhash_t PROP_ADDITIONAL_ANGULAR_DAMPING_THRESHOLD = dmHashString64("additional_angular_damping_threshold");
  
      enum EventMask
      {
 diff --git a/engine/physics/src/physics/physics.h b/engine/physics/src/physics/physics.h
-index fbe14ea581..b8d8c09c8c 100644
+index fbe14ea581..dec67bf830 100644
 --- a/engine/physics/src/physics/physics.h
 +++ b/engine/physics/src/physics/physics.h
-@@ -1104,6 +1104,14 @@ namespace dmPhysics
+@@ -1104,6 +1104,19 @@ namespace dmPhysics
      bool GetMaskBit3D(HCollisionObject3D collision_object, uint16_t groupbit);
      void SetMaskBit3D(HWorld3D world, HCollisionObject3D collision_object, uint16_t groupbit, bool boolvalue);
  
@@ -124,16 +160,32 @@ index fbe14ea581..b8d8c09c8c 100644
 +    float GetContactProcessingThreshold3D(HCollisionObject3D collision_object);
 +    void SetContactProcessingThreshold3D(HCollisionObject3D collision_object, float contact_processing_threshold);
 +
++    float GetLinearSleepingThreshold3D(HCollisionObject3D collision_object);
++    void SetLinearSleepingThreshold3D(HCollisionObject3D collision_object, float linear_sleeping_threshold);
++    float GetAngularSleepingThreshold3D(HCollisionObject3D collision_object);
++    void SetAngularSleepingThreshold3D(HCollisionObject3D collision_object, float angular_sleeping_threshold);
++
      /**
       * Container of data for ray cast queries.
       */
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..8e7b7c97d5 100644
+index 69c27889f3..db25a8c9f6 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
-@@ -971,6 +971,52 @@ namespace dmPhysics
-         }
-     }
+@@ -744,6 +744,10 @@ namespace dmPhysics
+             rb_info.m_restitution = data.m_Restitution;
+             rb_info.m_linearDamping = data.m_LinearDamping;
+             rb_info.m_angularDamping = data.m_AngularDamping;
++            if (data.m_Bullet) {
++                dmLogInfo("Additional damping is enabled");
++                rb_info.m_additionalDamping = true;
++            }
+             btRigidBody* body = new btRigidBody(rb_info);
+             float angular_factor = 1.0f;
+             if (data.m_LockedRotation) {
+@@ -1170,6 +1174,107 @@ namespace dmPhysics
+ 		}
+ 	}
  
 +    Vector3 GetLinearFactor3D(HCollisionObject3D collision_object)
 +    {
@@ -181,13 +233,6 @@ index 69c27889f3..8e7b7c97d5 100644
 +        }
 +    }
 +
-     bool IsEnabled3D(HCollisionObject3D collision_object)
-     {
-         btCollisionObject* co = GetCollisionObject(collision_object);
-@@ -1170,6 +1216,16 @@ namespace dmPhysics
- 		}
- 	}
- 
 +    float GetContactProcessingThreshold3D(HCollisionObject3D collision_object) {
 +        btCollisionObject* co = GetCollisionObject(collision_object);
 +        return co->getContactProcessingThreshold();
@@ -197,6 +242,51 @@ index 69c27889f3..8e7b7c97d5 100644
 +        btCollisionObject* co = GetCollisionObject(collision_object);
 +        co->setContactProcessingThreshold(contact_processing_threshold);
 +    }
++
++    float GetLinearSleepingThreshold3D(HCollisionObject3D collision_object) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        btRigidBody* body = btRigidBody::upcast(co);
++        if (body != 0x0) {
++            return body->getLinearSleepingThreshold();
++        } else {
++            return 0.0f;
++        }
++    }
++
++    void SetLinearSleepingThreshold3D(HCollisionObject3D collision_object, float linear_sleeping_threshold) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        btRigidBody* body = btRigidBody::upcast(co);
++        if (body != 0x0) {
++            body->setSleepingThresholds(linear_sleeping_threshold, body->getAngularSleepingThreshold());
++        }
++    }
++
++    float GetAngularSleepingThreshold3D(HCollisionObject3D collision_object) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        btRigidBody* body = btRigidBody::upcast(co);
++        if (body != 0x0) {
++            return body->getAngularSleepingThreshold();
++        } else {
++            return 0.0f;
++        }
++    }
++
++    void SetAngularSleepingThreshold3D(HCollisionObject3D collision_object, float angular_sleeping_threshold) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        btRigidBody* body = btRigidBody::upcast(co);
++        if (body != 0x0) {
++            body->setSleepingThresholds(body->getLinearSleepingThreshold(), angular_sleeping_threshold);
++        }
++    }
++
++    // bool GetAdditionalDamping3D(HCollisionObject3D collision_object) {
++    //     btCollisionObject* co = GetCollisionObject(collision_object);
++    //     btRigidBody* body = btRigidBody::upcast(co);
++    //     if (body != 0x0) {
++    //         return body->getAdditionalDamping();
++    //     }
++    //     return false;
++    // }
 +
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
