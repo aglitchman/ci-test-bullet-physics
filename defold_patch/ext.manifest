@@ -1,0 +1,6 @@
+name: "defold_patch"
+
+platforms:
+    x86_64-win32:
+        context:
+            excludeLibs: ["libgraphics_vulkan", "libphysics_3d"]
