@@ -3,4 +3,6 @@ name: "defold_patch"
 platforms:
     x86_64-win32:
         context:
-            excludeLibs: ["libgamesys", "libgraphics_vulkan", "libphysics_3d"]
+            excludeLibs: [libgamesys, libphysics_3d]
+            symbols: [GraphicsAdapterVulkan]
+            libs: [libplatform_vulkan.lib, vulkan-1.lib]

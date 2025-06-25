@@ -82,6 +82,28 @@ index ac651ef28d..57a2d83574 100644
          VulkanContext* context = (VulkanContext*) _context;
          VkResult res = CreateWindowSurface(context->m_Window, context->m_Instance, &context->m_WindowSurface, dmPlatform::GetWindowStateParam(context->m_Window, dmPlatform::WINDOW_STATE_HIGH_DPI));
          if (res != VK_SUCCESS)
+diff --git a/engine/graphics/src/vulkan/graphics_vulkan_private.h b/engine/graphics/src/vulkan/graphics_vulkan_private.h
+index 2ee4efa2a8..f4f4a2cb6c 100644
+--- a/engine/graphics/src/vulkan/graphics_vulkan_private.h
++++ b/engine/graphics/src/vulkan/graphics_vulkan_private.h
+@@ -32,7 +32,7 @@ namespace dmGraphics
+     typedef dmHashTable64<Pipeline>    PipelineCache;
+     typedef dmArray<ResourceToDestroy> ResourcesToDestroyList;
+ 
+-    const static uint8_t DM_MAX_FRAMES_IN_FLIGHT = 2; // In flight frames - number of concurrent frames being processed
++    const static uint8_t DM_MAX_FRAMES_IN_FLIGHT = 3; // In flight frames - number of concurrent frames being processed
+ 
+     enum VulkanResourceType
+     {
+@@ -429,7 +429,7 @@ namespace dmGraphics
+         uint32_t                        m_WindowHeight;
+         uint32_t                        m_SwapInterval;
+         uint32_t                        m_FrameBegun           : 1;
+-        uint32_t                        m_CurrentFrameInFlight : 1;
++        uint32_t                        m_CurrentFrameInFlight : 2;
+         uint32_t                        m_NumFramesInFlight    : 2;
+         uint32_t                        m_VerifyGraphicsCalls  : 1;
+         uint32_t                        m_ViewportChanged      : 1;
 diff --git a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp b/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
 index bd6d38ea53..1a586909a0 100644
 --- a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp

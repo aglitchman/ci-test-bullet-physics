@@ -1,5 +1,10 @@
 function init(self)
 	print("Hello!")
+
+	print("angular_damping", go.get("/physics#collisionobject", "angular_damping"))
+	print("contact_processing_threshold", string.format("%.10f", go.get("/physics#collisionobject", "contact_processing_threshold")))
+	go.set("/physics#collisionobject", "contact_processing_threshold", 0.001)
+	print("contact_processing_threshold", string.format("%.10f", go.get("/physics#collisionobject", "contact_processing_threshold")))
 end
 
 function final(self)
