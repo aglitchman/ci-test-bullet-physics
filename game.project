@@ -17,3 +17,8 @@ include_dirs = defold_patch
 [input]
 game_binding = /builtins/input/all.input_bindingc
 
+[physics]
+type = 3D
+use_fixed_timestep = 1
+max_fixed_timesteps = 0
+
