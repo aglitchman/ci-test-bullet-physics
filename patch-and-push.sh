@@ -13,5 +13,8 @@ rm -f all.patch
 
 cd $TARGET_DIR
 git add .
-git commit -m "Update patch"
+# Get the next commit number by counting commits with "Update patch #" pattern
+COMMIT_COUNT=$(git log --oneline --grep="Update patch #" | wc -l)
+NEXT_NUMBER=$((COMMIT_COUNT + 1))
+git commit -m "Update patch #$NEXT_NUMBER"
 git push
