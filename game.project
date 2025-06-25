@@ -22,3 +22,6 @@ type = 3D
 use_fixed_timestep = 1
 max_fixed_timesteps = 0
 
+[native_extension]
+app_manifest = /vulkan.appmanifest
+

@@ -14,7 +14,7 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
 diff --git a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
-index 6b88707a93..2b9f057fee 100644
+index 6b88707a93..892fd98464 100644
 --- a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 +++ b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 @@ -77,6 +77,8 @@ namespace dmGameSystem
@@ -26,6 +26,62 @@ index 6b88707a93..2b9f057fee 100644
          PhysicsContextBullet3D* physics_context = (PhysicsContextBullet3D*) params.m_Context;
          if (params.m_MaxComponentInstances == 0 || physics_context->m_Context == 0x0)
          {
+@@ -598,6 +600,11 @@ namespace dmGameSystem
+             out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularDamping3D(component->m_Object3D));
+             return dmGameObject::PROPERTY_RESULT_OK;
+         }
++        else if (params.m_PropertyId == PROP_CONTACT_PROCESSING_THRESHOLD)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetContactProcessingThreshold3D(component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
+         return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
+     }
+ 
+@@ -650,6 +657,15 @@ namespace dmGameSystem
+         {
+             return dmGameObject::PROPERTY_RESULT_READ_ONLY;
+         }
++        else if (params.m_PropertyId == PROP_CONTACT_PROCESSING_THRESHOLD)
++        {
++            if (params.m_Value.m_Type != dmGameObject::PROPERTY_TYPE_NUMBER)
++            {
++                return dmGameObject::PROPERTY_RESULT_TYPE_MISMATCH;
++            }
++            dmPhysics::SetContactProcessingThreshold3D(component->m_Object3D, params.m_Value.m_Number);
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
+         return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
+     }
+ 
+diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
+index 2ec67baf3f..5cd2bb878f 100644
+--- a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
++++ b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
+@@ -27,6 +27,10 @@ namespace dmGameSystem
+     static const dmhash_t PROP_MASS             = dmHashString64("mass");
+     static const dmhash_t PROP_BULLET           = dmHashString64("bullet");
+ 
++    // void	setContactProcessingThreshold( btScalar contactProcessingThreshold)
++    // btScalar	getContactProcessingThreshold() const
++    static const dmhash_t PROP_CONTACT_PROCESSING_THRESHOLD = dmHashString64("contact_processing_threshold");
++
+     enum EventMask
+     {
+         EVENT_MASK_COLLISION = 1 << 0,
+diff --git a/engine/graphics/src/vulkan/graphics_vulkan.cpp b/engine/graphics/src/vulkan/graphics_vulkan.cpp
+index ac651ef28d..57a2d83574 100644
+--- a/engine/graphics/src/vulkan/graphics_vulkan.cpp
++++ b/engine/graphics/src/vulkan/graphics_vulkan.cpp
+@@ -943,6 +943,8 @@ namespace dmGraphics
+ 
+     bool InitializeVulkan(HContext _context)
+     {
++        dmLogInfo("PATCH: Vulkan InitializeVulkan");
++
+         VulkanContext* context = (VulkanContext*) _context;
+         VkResult res = CreateWindowSurface(context->m_Window, context->m_Instance, &context->m_WindowSurface, dmPlatform::GetWindowStateParam(context->m_Window, dmPlatform::WINDOW_STATE_HIGH_DPI));
+         if (res != VK_SUCCESS)
 diff --git a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp b/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
 index bd6d38ea53..1a586909a0 100644
 --- a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
@@ -66,6 +122,41 @@ index bd6d38ea53..1a586909a0 100644
          VkSwapchainCreateInfoKHR vk_swap_chain_create_info;
          memset((void*)&vk_swap_chain_create_info, 0, sizeof(vk_swap_chain_create_info));
  
+diff --git a/engine/physics/src/physics/physics.h b/engine/physics/src/physics/physics.h
+index fbe14ea581..022ad965ee 100644
+--- a/engine/physics/src/physics/physics.h
++++ b/engine/physics/src/physics/physics.h
+@@ -1104,6 +1104,9 @@ namespace dmPhysics
+     bool GetMaskBit3D(HCollisionObject3D collision_object, uint16_t groupbit);
+     void SetMaskBit3D(HWorld3D world, HCollisionObject3D collision_object, uint16_t groupbit, bool boolvalue);
+ 
++    float GetContactProcessingThreshold3D(HCollisionObject3D collision_object);
++    void SetContactProcessingThreshold3D(HCollisionObject3D collision_object, float contact_processing_threshold);
++
+     /**
+      * Container of data for ray cast queries.
+      */
+diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
+index 69c27889f3..781563e12d 100644
+--- a/engine/physics/src/physics/physics_3d.cpp
++++ b/engine/physics/src/physics/physics_3d.cpp
+@@ -1170,6 +1170,16 @@ namespace dmPhysics
+ 		}
+ 	}
+ 
++    float GetContactProcessingThreshold3D(HCollisionObject3D collision_object) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        return co->getContactProcessingThreshold();
++    }
++
++    void SetContactProcessingThreshold3D(HCollisionObject3D collision_object, float contact_processing_threshold) {
++        btCollisionObject* co = GetCollisionObject(collision_object);
++        co->setContactProcessingThreshold(contact_processing_threshold);
++    }
++
+     void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
+     {
+         if (!world->m_RayCastRequests.Full())
 diff --git a/scripts/build.py b/scripts/build.py
 index ed172050f9..cd0f572678 100755
 --- a/scripts/build.py

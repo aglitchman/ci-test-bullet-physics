@@ -91,6 +91,7 @@ jobs:
             tmp/dynamo_home/lib/${{ matrix.platform }}
 
       - name: Copy engine libraries to the patch
+        shell: bash
         run: |
           for lib in $(ls tmp/dynamo_home/lib/${{ matrix.platform }} | grep -E "^(gamesys|graphics_vulkan|physics_3d)\\."); do
             cp -r "tmp/dynamo_home/lib/${{ matrix.platform }}/${lib}" "patch/defold_patch/lib/${{ matrix.platform }}/${lib%.*}_patch.${lib##*.}"
