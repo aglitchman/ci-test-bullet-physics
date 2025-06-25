@@ -91,6 +91,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           path: patch
+          ref: ${{ github.head_ref }}
 
       - name: Copy engine libraries to the patch
         shell: bash

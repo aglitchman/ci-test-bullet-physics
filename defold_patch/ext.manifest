@@ -1,6 +1,10 @@
 name: "defold_patch"
 
 platforms:
+    wasm-web:
+        context:
+            excludeLibs: [gamesys, physics_3d]
+
     x86_64-win32:
         context:
             excludeLibs: [libgamesys, libphysics_3d]
