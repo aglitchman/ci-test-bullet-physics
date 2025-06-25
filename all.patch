@@ -27,10 +27,18 @@ index 6b88707a93..2b9f057fee 100644
          if (params.m_MaxComponentInstances == 0 || physics_context->m_Context == 0x0)
          {
 diff --git a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp b/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
-index bd6d38ea53..e2114f4a54 100644
+index bd6d38ea53..1a586909a0 100644
 --- a/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
 +++ b/engine/graphics/src/vulkan/graphics_vulkan_swap_chain.cpp
-@@ -95,6 +95,8 @@ namespace dmGraphics
+@@ -14,6 +14,7 @@
+ 
+ #include <dlib/math.h>
+ #include <dlib/array.h>
++#include <dlib/log.h>
+ 
+ #include "graphics_vulkan_defines.h"
+ #include "graphics_vulkan_private.h"
+@@ -95,6 +96,8 @@ namespace dmGraphics
          uint32_t* wantedWidth, uint32_t* wantedHeight,
          bool wantVSync, SwapChainCapabilities& capabilities, SwapChain* swapChain)
      {
@@ -39,7 +47,7 @@ index bd6d38ea53..e2114f4a54 100644
          VkSwapchainKHR vk_old_swap_chain    = swapChain->m_SwapChain;
          VkDevice vk_device                  = logicalDevice->m_Device;
          VkPhysicalDevice vk_physical_device = physicalDevice->m_Device;
-@@ -146,6 +148,9 @@ namespace dmGraphics
+@@ -146,6 +149,9 @@ namespace dmGraphics
          // before we can acquire another image to render to"
          uint32_t swap_chain_image_count = capabilities.m_SurfaceCapabilities.minImageCount + 1;
  
@@ -49,7 +57,7 @@ index bd6d38ea53..e2114f4a54 100644
          if (capabilities.m_SurfaceCapabilities.maxImageCount > 0)
          {
              swap_chain_image_count = dmMath::Clamp(swap_chain_image_count,
-@@ -155,6 +160,8 @@ namespace dmGraphics
+@@ -155,6 +161,8 @@ namespace dmGraphics
  
          swap_chain_image_count = dmMath::Min(swap_chain_image_count, (uint32_t) DM_MAX_FRAMES_IN_FLIGHT);
  
