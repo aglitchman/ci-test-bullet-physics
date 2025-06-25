@@ -1,0 +1,75 @@
+name: Build Bob
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+env:
+  DM_PACKAGES_URL: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/
+  BUILD_BRANCH: 1.9.7-alpha
+  BUILD_REF: 04f21d84f5acd3e9bfae06121729afb2a4c69ab0
+
+jobs:
+  build-bob:
+    runs-on: ubuntu-20.04
+    steps:
+      - name: Checkout Defold
+        uses: actions/checkout@v4
+        with:
+          repository: defold/defold
+          ref: ${{ env.BUILD_REF }}
+
+      - name: Checkout patches
+        uses: actions/checkout@v4
+        with:
+          path: patches
+
+      - name: Apply patches
+        run: |
+          git apply patches/all.patch
+          cp patches/astcenc-8b0aa01-arm64-linux.tar.gz packages/
+          cp patches/glfw-3.4-arm64-linux.tar.gz packages/
+
+      - name: Install Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+        with:
+          python-version: 3.12
+
+      - name: Install Java
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
+        with:
+          java-version: '21.0.5+11.0.LTS'
+          distribution: 'temurin'
+
+      - name: Download pre-built Bob + Chmod +x copy_from_bob.sh
+        run: |
+          mkdir -p tmp/dynamo_home/share/java
+          curl -L https://github.com/defold/defold/releases/download/${{env.BUILD_BRANCH}}/bob.jar -o tmp/dynamo_home/share/java/bob.jar
+          chmod +x com.dynamo.cr/com.dynamo.cr.bob/scripts/copy_from_bob.sh
+          DYNAMO_HOME=$(pwd)/tmp/dynamo_home ./com.dynamo.cr/com.dynamo.cr.bob/scripts/copy_from_bob.sh
+
+      - name: Download archives
+        uses: actions/download-artifact@v4
+        with:
+          name: defold-x86_64-linux
+          path: tmp/dynamo_home
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          # Linux x86_64 run id
+          run-id: 12518366772
+
+      - name: List Dynamo home
+        run: ls -R tmp/dynamo_home
+
+      - name: Build Bob
+        run: ci/ci.sh bob
+
+      - name: Check Bob version
+        run: java -jar tmp/dynamo_home/share/java/bob.jar --version
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: bob.jar
+          path: |
+            tmp/dynamo_home/share/java/bob.jar

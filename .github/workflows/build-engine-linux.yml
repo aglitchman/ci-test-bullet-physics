@@ -1,0 +1,126 @@
+# Keep this in sync with
+# https://github.com/defold/defold/blob/dev/.github/workflows/engine-nightly.yml
+
+name: Build Defold Linux x86_64
+
+# Controls when the workflow will run
+on:
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+  # push:
+  #   branches:
+  #     - main
+
+env:
+  DM_PACKAGES_URL: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/
+  BUILD_BRANCH: 1.10.2
+  # BUILD_BRANCH: 04f21d84f5acd3e9bfae06121729afb2a4c69ab0
+
+jobs:
+  bld-eng-linux:
+    runs-on: ubuntu-22.04
+    strategy:
+      matrix:
+        platform: [x86_64-linux]
+        # x86_64-linux, arm64-linux
+    steps:
+      - name: Checkout Defold
+        uses: actions/checkout@v4
+        with:
+          repository: defold/defold
+          ref: ${{ env.BUILD_BRANCH }}
+
+      - name: Checkout patches
+        uses: actions/checkout@v4
+        with:
+          path: patches
+
+      - name: Apply patches
+        run: |
+          git apply patches/all.patch
+          cp patches/astcenc-8b0aa01-arm64-linux.tar.gz packages/
+          cp patches/glfw-3.4-arm64-linux.tar.gz packages/
+
+      - name: Install Python
+        uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
+        with:
+          python-version: 3.12
+
+      - name: Install Java
+        uses: actions/setup-java@99b8673ff64fbf99d8d325f52d9a5bdedb8483e9
+        with:
+          java-version: '21.0.5+11.0.LTS'
+          distribution: temurin
+
+      - name: Setup dotnet
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 9.x
+
+      - name: Install dependencies
+        run: ci/ci.sh install --platform=${{ matrix.platform }}
+
+      # - name: Install dependencies
+      # - run: |
+      #     sudo apt update && sudo apt install libncurses5 autoconf automake build-essential freeglut3-dev libssl-dev libtool libxi-dev libx11-xcb-dev libxrandr-dev libopenal-dev libgl1-mesa-dev libglw1-mesa-dev lib32z1 openssl tofrodos tree valgrind uuid-dev xvfb
+
+      # - name: Install LLVM and Clang
+      #   uses: KyleMayes/install-llvm-action@v2
+      #   with:
+      #     version: 16.0.0
+
+      - run: |
+          clang -v
+
+      # libstdc++-10-dev:arm64 
+      - name: Install ARM64 dependencies
+        if: matrix.platform == 'arm64-linux'
+        run: |
+          sudo dpkg --add-architecture arm64
+          sudo sed -i -E 's/^deb /deb [arch=amd64] /' /etc/apt/sources.list
+          echo 'deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal main restricted universe multiverse' | sudo tee -a /etc/apt/sources.list
+          echo 'deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-updates main restricted universe multiverse' | sudo tee -a /etc/apt/sources.list
+          echo 'deb [arch=arm64] http://ports.ubuntu.com/ubuntu-ports focal-security main restricted universe multiverse' | sudo tee -a /etc/apt/sources.list
+          sudo apt update
+          sudo apt install --no-install-recommends -y crossbuild-essential-arm64 qemu-user libc6-dev:arm64 libx11-dev:arm64 libxi-dev:arm64 libxcb-xkb-dev:arm64 libglu-dev:arm64 libgl-dev:arm64 libgles-dev:arm64 libopenal-dev:arm64
+
+      # sudo apt install -y libwayland-dev:arm64 libxkbcommon-dev:arm64 xorg-dev:arm64
+      # - name: Build GLFW
+      #   if: matrix.platform == 'arm64-linux'
+      #   run: |
+      #     cd share/ext/glfw
+      #     ./build_glfw.sh ${{ matrix.platform }}
+      #     cp glfw-3.4-arm64-linux.tar.gz ../../../packages/
+
+      # - name: Build ASTCENC
+      #   if: matrix.platform == 'arm64-linux'
+      #   run: |
+      #     cd share/ext/astcenc
+      #     ./build_astcenc.sh ${{ matrix.platform }}
+      #     cp astcenc-8b0aa01-arm64-linux.tar.gz ../../../packages/
+
+      - name: Build
+        if: matrix.platform == 'x86_64-linux'
+        run: ci/ci.sh --platform=${{ matrix.platform }} --archive engine
+
+      - name: Build
+        if: matrix.platform == 'arm64-linux'
+        run: ci/ci.sh --platform=${{ matrix.platform }} --archive --skip-builtins --skip-docs engine
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.platform == 'x86_64-linux'
+        with:
+          name: defold-${{ matrix.platform }}
+          path: |
+            tmp/dynamo_home/archive
+            tmp/dynamo_home/bin/${{ matrix.platform }}
+            tmp/dynamo_home/lib/${{ matrix.platform }}
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        if: matrix.platform == 'arm64-linux'
+        with:
+          name: defold-${{ matrix.platform }}
+          path: |
+            tmp/dynamo_home/bin/${{ matrix.platform }}
