@@ -20,6 +20,12 @@ jobs:
       matrix:
         platform: [wasm-web]
     runs-on: ubuntu-22.04
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
     steps:
       - name: Checkout Defold
         uses: actions/checkout@v4
@@ -78,3 +84,17 @@ jobs:
           path: |
             tmp/dynamo_home/bin/${{ matrix.platform }}
             tmp/dynamo_home/lib/${{ matrix.platform }}
+
+      - name: Copy engine libraries to the patch
+        shell: bash
+        run: |
+          mkdir -p patch/defold_patch/lib/${{ matrix.platform }}
+          for lib in $(ls tmp/dynamo_home/lib/${{ matrix.platform }} | grep -E "(gamesys|physics_3d)\\."); do
+            cp -r "tmp/dynamo_home/lib/${{ matrix.platform }}/${lib}" "patch/defold_patch/lib/${{ matrix.platform }}/${lib%.*}_patch.${lib##*.}"
+          done
+
+      - name: Commit changes
+        uses: stefanzweifel/git-auto-commit-action@v6
+        with:
+          repository: patch
+          commit_message: Apply new libraries

@@ -4,5 +4,6 @@ platforms:
     x86_64-win32:
         context:
             excludeLibs: [libgamesys, libphysics_3d]
-            symbols: [GraphicsAdapterVulkan]
-            libs: [libplatform_vulkan.lib, vulkan-1.lib]
+
+#            symbols: [GraphicsAdapterVulkan]
+#            libs: [libplatform_vulkan.lib, vulkan-1.lib]
