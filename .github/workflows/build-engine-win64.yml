@@ -39,7 +39,8 @@ jobs:
           path: patch
 
       - name: Apply patch
-        run: git apply patch/all.patch
+        run: |
+          git apply patch/all.patch
 
       - name: Download SDKs
         uses: actions/download-artifact@v4

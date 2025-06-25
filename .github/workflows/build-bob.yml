@@ -7,8 +7,8 @@ on:
 
 env:
   DM_PACKAGES_URL: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/
-  BUILD_BRANCH: 1.9.7-alpha
-  BUILD_REF: 04f21d84f5acd3e9bfae06121729afb2a4c69ab0
+  # BUILD_BRANCH: 1.9.7-alpha
+  BUILD_BRANCH: 04f21d84f5acd3e9bfae06121729afb2a4c69ab0
 
 jobs:
   build-bob:
@@ -20,16 +20,14 @@ jobs:
           repository: defold/defold
           ref: ${{ env.BUILD_REF }}
 
-      - name: Checkout patches
+      - name: Checkout patch
         uses: actions/checkout@v4
         with:
-          path: patches
+          path: patch
 
-      - name: Apply patches
+      - name: Apply patch
         run: |
-          git apply patches/all.patch
-          cp patches/astcenc-8b0aa01-arm64-linux.tar.gz packages/
-          cp patches/glfw-3.4-arm64-linux.tar.gz packages/
+          git apply patch/all.patch
 
       - name: Install Python
         uses: actions/setup-python@0a5c61591373683505ea898e09a3ea4f39ef2b9c
