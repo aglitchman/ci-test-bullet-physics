@@ -215,7 +215,7 @@ index 6b88707a93..7b7ce42727 100644
          //g_PhysicsAdapter->m_SetCollisionFlipH      = SetCollisionFlipHBullet3D;
          //g_PhysicsAdapter->m_SetCollisionFlipV      = SetCollisionFlipVBullet3D;
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
-index a5d96d980a..ed5605c08a 100644
+index a5d96d980a..19a3e0f37e 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 @@ -21,6 +21,7 @@
@@ -226,14 +226,13 @@ index a5d96d980a..ed5605c08a 100644
  #include <gameobject/gameobject_ddf.h>
  #include <dmsdk/gameobject/script.h>
  
-@@ -978,4 +979,24 @@ namespace dmGameSystem
+@@ -978,4 +979,22 @@ namespace dmGameSystem
          }
          return world->m_AdapterFunctions->m_GetPhysicsEngineType(world);
      }
 +
 +    void* GetNativeCollisionObject(CollisionWorld* world, CollisionComponent* component)
 +    {
-+        dmLogInfo("GetNativeCollisionObject");
 +        if (!world->m_AdapterFunctions->m_GetNativeCollisionObject)
 +        {
 +            return 0;
@@ -243,7 +242,6 @@ index a5d96d980a..ed5605c08a 100644
 +
 +    void* GetNativeCollisionWorld(CollisionWorld* world)
 +    {
-+        dmLogInfo("GetNativeCollisionWorld");
 +        if (!world->m_AdapterFunctions->m_GetNativeCollisionWorld)
 +        {
 +            return 0;
@@ -391,7 +389,7 @@ index fbe14ea581..c99dac6b9e 100644
  
  #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..9f350a5b53 100644
+index 69c27889f3..5f1e8d3268 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
 @@ -744,6 +744,10 @@ namespace dmPhysics
@@ -569,20 +567,18 @@ index 69c27889f3..9f350a5b53 100644
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
          if (!world->m_RayCastRequests.Full())
-@@ -1368,4 +1515,16 @@ namespace dmPhysics
+@@ -1368,4 +1515,14 @@ namespace dmPhysics
              }
          }
      }
 +
 +    void* GetNativeCollisionObject3D(HCollisionObject3D collision_object)
 +    {
-+        dmLogInfo("GetNativeCollisionObject3D %s", collision_object != 0x0 ? "exists" : "does not exist");
 +        return (void*) GetCollisionObject(collision_object);
 +    }
 +
 +    void* GetNativeCollisionWorld3D(HWorld3D world)
 +    {
-+        dmLogInfo("GetNativeCollisionWorld3D %s", world != 0x0 ? "exists" : "does not exist");
 +        return (void*) world->m_DynamicsWorld;
 +    }
  }
