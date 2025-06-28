@@ -63,7 +63,7 @@ index 41f047f835..58dd35ff2f 100644
   *
   * This message is broadcasted to every component of an instance that has a collision object,
 diff --git a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
-index 6b88707a93..afbb887eb4 100644
+index 6b88707a93..7b7ce42727 100644
 --- a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 +++ b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 @@ -77,6 +77,8 @@ namespace dmGameSystem
@@ -185,6 +185,87 @@ index 6b88707a93..afbb887eb4 100644
          return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
      }
  
+@@ -859,6 +950,18 @@ namespace dmGameSystem
+         return PhysicsEngineType::PHYSICS_ENGINE_BULLET3D;
+     }
+ 
++    static void* GetNativeCollisionObjectBullet3D(CollisionComponent* _component)
++    {
++        CollisionComponentBullet3D* component = (CollisionComponentBullet3D*)_component;
++        return dmPhysics::GetNativeCollisionObject3D(component->m_Object3D);
++    }
++
++    static void* GetNativeCollisionWorldBullet3D(CollisionWorld* _world)
++    {
++        CollisionWorldBullet3D* world = (CollisionWorldBullet3D*)_world;
++        return dmPhysics::GetNativeCollisionWorld3D(world->m_World3D);
++    }
++
+     static void InstallBullet3DPhysicsAdapter()
+     {
+         if (g_PhysicsAdapter)
+@@ -881,6 +984,9 @@ namespace dmGameSystem
+         g_PhysicsAdapter->m_SetShape               = SetShapeBullet3D;
+         g_PhysicsAdapter->m_GetPhysicsEngineType   = GetPhysicsEngineTypeBullet3D;
+ 
++        g_PhysicsAdapter->m_GetNativeCollisionObject = GetNativeCollisionObjectBullet3D;
++        g_PhysicsAdapter->m_GetNativeCollisionWorld  = GetNativeCollisionWorldBullet3D;
++
+         // Unimplemented functions:
+         //g_PhysicsAdapter->m_SetCollisionFlipH      = SetCollisionFlipHBullet3D;
+         //g_PhysicsAdapter->m_SetCollisionFlipV      = SetCollisionFlipVBullet3D;
+diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
+index a5d96d980a..ed5605c08a 100644
+--- a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
++++ b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
+@@ -21,6 +21,7 @@
+ #include "gamesys.h"
+ 
+ #include <dlib/profile.h>
++#include <dlib/log.h>
+ #include <gameobject/gameobject_ddf.h>
+ #include <dmsdk/gameobject/script.h>
+ 
+@@ -978,4 +979,24 @@ namespace dmGameSystem
+         }
+         return world->m_AdapterFunctions->m_GetPhysicsEngineType(world);
+     }
++
++    void* GetNativeCollisionObject(CollisionWorld* world, CollisionComponent* component)
++    {
++        dmLogInfo("GetNativeCollisionObject");
++        if (!world->m_AdapterFunctions->m_GetNativeCollisionObject)
++        {
++            return 0;
++        }
++        return world->m_AdapterFunctions->m_GetNativeCollisionObject(component);
++    }
++
++    void* GetNativeCollisionWorld(CollisionWorld* world)
++    {
++        dmLogInfo("GetNativeCollisionWorld");
++        if (!world->m_AdapterFunctions->m_GetNativeCollisionWorld)
++        {
++            return 0;
++        }
++        return world->m_AdapterFunctions->m_GetNativeCollisionWorld(world);
++    }
+ }
+diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.h b/engine/gamesys/src/gamesys/components/comp_collision_object.h
+index 450dbda1b5..6d181d7a56 100644
+--- a/engine/gamesys/src/gamesys/components/comp_collision_object.h
++++ b/engine/gamesys/src/gamesys/components/comp_collision_object.h
+@@ -94,6 +94,10 @@ namespace dmGameSystem
+     dmPhysics::JointResult SetJointParams(CollisionWorld* world, CollisionComponent* component, dmhash_t id, const dmPhysics::ConnectJointParams& joint_params);
+     dmPhysics::JointResult GetJointReactionForce(CollisionWorld* world, CollisionComponent* component, dmhash_t id, dmVMath::Vector3& force);
+     dmPhysics::JointResult GetJointReactionTorque(CollisionWorld* world, CollisionComponent* component, dmhash_t id, float& torque);
++
++    // Native API
++    void* GetNativeCollisionObject(CollisionWorld* world, CollisionComponent* component);
++    void* GetNativeCollisionWorld(CollisionWorld* world);
+ }
+ 
+ #endif // DM_GAMESYS_COMP_COLLISION_OBJECT_H
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
 index 2ec67baf3f..8d8ea79323 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
@@ -211,8 +292,32 @@ index 2ec67baf3f..8d8ea79323 100644
      enum EventMask
      {
          EVENT_MASK_COLLISION = 1 << 0,
+diff --git a/engine/gamesys/src/gamesys/gamesys.h b/engine/gamesys/src/gamesys/gamesys.h
+index c84c955a3f..f27e0cbd61 100644
+--- a/engine/gamesys/src/gamesys/gamesys.h
++++ b/engine/gamesys/src/gamesys/gamesys.h
+@@ -113,6 +113,9 @@ namespace dmGameSystem
+     typedef dmPhysics::JointResult (*GetJointReactionForceFn)(CollisionWorld* world, CollisionComponent* component, dmhash_t id, dmVMath::Vector3& force);
+     typedef dmPhysics::JointResult (*GetJointReactionTorqueFn)(CollisionWorld* world, CollisionComponent* component, dmhash_t id, float& torque);
+ 
++    typedef void* (*GetNativeCollisionObjectFn)(CollisionComponent* component);
++    typedef void* (*GetNativeCollisionWorldFn)(CollisionWorld* world);
++
+     struct PhysicsAdapterFunctionTable
+     {
+         IsEnabledFn              m_IsEnabled;
+@@ -139,6 +142,9 @@ namespace dmGameSystem
+         SetJointParamsFn         m_SetJointParams;
+         GetJointReactionForceFn  m_GetJointReactionForce;
+         GetJointReactionTorqueFn m_GetJointReactionTorque;
++
++        GetNativeCollisionObjectFn m_GetNativeCollisionObject;
++        GetNativeCollisionWorldFn  m_GetNativeCollisionWorld;
+     };
+ 
+     struct PhysicsMessage
 diff --git a/engine/physics/src/physics/physics.h b/engine/physics/src/physics/physics.h
-index fbe14ea581..ee9501b23b 100644
+index fbe14ea581..c99dac6b9e 100644
 --- a/engine/physics/src/physics/physics.h
 +++ b/engine/physics/src/physics/physics.h
 @@ -759,6 +759,23 @@ namespace dmPhysics
@@ -275,8 +380,18 @@ index fbe14ea581..ee9501b23b 100644
      /**
       * Container of data for ray cast queries.
       */
+@@ -1436,6 +1475,9 @@ namespace dmPhysics
+     void              SetCollisionShapeRadius2D(HWorld2D world, HCollisionShape2D shape, float radius);
+     void              SetCollisionShapeBoxDimensions2D(HWorld2D world, HCollisionShape2D shape, dmVMath::Quat rotation, float w, float h);
+     void              SynchronizeObject2D(HWorld2D world, HCollisionObject2D collision_object);
++
++    void* GetNativeCollisionObject3D(HCollisionObject3D collision_object);
++    void* GetNativeCollisionWorld3D(HWorld3D world);
+ }
+ 
+ #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..06756af51b 100644
+index 69c27889f3..9f350a5b53 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
 @@ -744,6 +744,10 @@ namespace dmPhysics
@@ -454,6 +569,23 @@ index 69c27889f3..06756af51b 100644
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
          if (!world->m_RayCastRequests.Full())
+@@ -1368,4 +1515,16 @@ namespace dmPhysics
+             }
+         }
+     }
++
++    void* GetNativeCollisionObject3D(HCollisionObject3D collision_object)
++    {
++        dmLogInfo("GetNativeCollisionObject3D %s", collision_object != 0x0 ? "exists" : "does not exist");
++        return (void*) GetCollisionObject(collision_object);
++    }
++
++    void* GetNativeCollisionWorld3D(HWorld3D world)
++    {
++        dmLogInfo("GetNativeCollisionWorld3D %s", world != 0x0 ? "exists" : "does not exist");
++        return (void*) world->m_DynamicsWorld;
++    }
+ }
 diff --git a/scripts/build.py b/scripts/build.py
 index ed172050f9..cd0f572678 100755
 --- a/scripts/build.py
