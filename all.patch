@@ -215,7 +215,7 @@ index 6b88707a93..7b7ce42727 100644
          //g_PhysicsAdapter->m_SetCollisionFlipH      = SetCollisionFlipHBullet3D;
          //g_PhysicsAdapter->m_SetCollisionFlipV      = SetCollisionFlipVBullet3D;
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
-index a5d96d980a..19a3e0f37e 100644
+index a5d96d980a..2706e1414b 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 @@ -21,6 +21,7 @@
@@ -226,31 +226,33 @@ index a5d96d980a..19a3e0f37e 100644
  #include <gameobject/gameobject_ddf.h>
  #include <dmsdk/gameobject/script.h>
  
-@@ -978,4 +979,22 @@ namespace dmGameSystem
+@@ -978,4 +979,24 @@ namespace dmGameSystem
          }
          return world->m_AdapterFunctions->m_GetPhysicsEngineType(world);
      }
 +
-+    void* GetNativeCollisionObject(CollisionWorld* world, CollisionComponent* component)
++    void* GetNativeCollisionObject(dmGameObject::HComponentWorld world, dmGameObject::HComponent component)
 +    {
-+        if (!world->m_AdapterFunctions->m_GetNativeCollisionObject)
++        CollisionWorld* collision_world = (CollisionWorld*)world;
++        if (!collision_world->m_AdapterFunctions->m_GetNativeCollisionObject)
 +        {
 +            return 0;
 +        }
-+        return world->m_AdapterFunctions->m_GetNativeCollisionObject(component);
++        return collision_world->m_AdapterFunctions->m_GetNativeCollisionObject((CollisionComponent*)component);
 +    }
 +
-+    void* GetNativeCollisionWorld(CollisionWorld* world)
++    void* GetNativeCollisionWorld(dmGameObject::HComponentWorld world)
 +    {
-+        if (!world->m_AdapterFunctions->m_GetNativeCollisionWorld)
++        CollisionWorld* collision_world = (CollisionWorld*)world;
++        if (!collision_world->m_AdapterFunctions->m_GetNativeCollisionWorld)
 +        {
 +            return 0;
 +        }
-+        return world->m_AdapterFunctions->m_GetNativeCollisionWorld(world);
++        return collision_world->m_AdapterFunctions->m_GetNativeCollisionWorld(collision_world);
 +    }
  }
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.h b/engine/gamesys/src/gamesys/components/comp_collision_object.h
-index 450dbda1b5..6d181d7a56 100644
+index 450dbda1b5..8fd404717f 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object.h
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object.h
 @@ -94,6 +94,10 @@ namespace dmGameSystem
@@ -259,8 +261,8 @@ index 450dbda1b5..6d181d7a56 100644
      dmPhysics::JointResult GetJointReactionTorque(CollisionWorld* world, CollisionComponent* component, dmhash_t id, float& torque);
 +
 +    // Native API
-+    void* GetNativeCollisionObject(CollisionWorld* world, CollisionComponent* component);
-+    void* GetNativeCollisionWorld(CollisionWorld* world);
++    void* GetNativeCollisionObject(dmGameObject::HComponentWorld world, dmGameObject::HComponent component);
++    void* GetNativeCollisionWorld(dmGameObject::HComponentWorld world);
  }
  
  #endif // DM_GAMESYS_COMP_COLLISION_OBJECT_H
