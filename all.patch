@@ -63,7 +63,7 @@ index 41f047f835..58dd35ff2f 100644
   *
   * This message is broadcasted to every component of an instance that has a collision object,
 diff --git a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
-index 6b88707a93..7b7ce42727 100644
+index 6b88707a93..e0e90b19ec 100644
 --- a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 +++ b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 @@ -77,6 +77,8 @@ namespace dmGameSystem
@@ -91,7 +91,7 @@ index 6b88707a93..7b7ce42727 100644
          else if (params.m_Message->m_Id == dmPhysicsDDF::RequestVelocity::m_DDFDescriptor->m_NameHash)
          {
              dmPhysicsDDF::VelocityResponse response;
-@@ -598,6 +609,41 @@ namespace dmGameSystem
+@@ -598,6 +609,51 @@ namespace dmGameSystem
              out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularDamping3D(component->m_Object3D));
              return dmGameObject::PROPERTY_RESULT_OK;
          }
@@ -130,10 +130,20 @@ index 6b88707a93..7b7ce42727 100644
 +            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetAngularSleepingThreshold3D(component->m_Object3D));
 +            return dmGameObject::PROPERTY_RESULT_OK;
 +        }
++        else if (params.m_PropertyId == PROP_POSITION)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetPosition3D(physics_context->m_Context, component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
++        else if (params.m_PropertyId == PROP_ROTATION)
++        {
++            out_value.m_Variant = dmGameObject::PropertyVar(dmPhysics::GetRotation3D(physics_context->m_Context, component->m_Object3D));
++            return dmGameObject::PROPERTY_RESULT_OK;
++        }
          return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
      }
  
-@@ -650,6 +696,51 @@ namespace dmGameSystem
+@@ -650,6 +706,51 @@ namespace dmGameSystem
          {
              return dmGameObject::PROPERTY_RESULT_READ_ONLY;
          }
@@ -185,7 +195,7 @@ index 6b88707a93..7b7ce42727 100644
          return dmGameObject::PROPERTY_RESULT_NOT_FOUND;
      }
  
-@@ -859,6 +950,18 @@ namespace dmGameSystem
+@@ -859,6 +960,18 @@ namespace dmGameSystem
          return PhysicsEngineType::PHYSICS_ENGINE_BULLET3D;
      }
  
@@ -204,7 +214,7 @@ index 6b88707a93..7b7ce42727 100644
      static void InstallBullet3DPhysicsAdapter()
      {
          if (g_PhysicsAdapter)
-@@ -881,6 +984,9 @@ namespace dmGameSystem
+@@ -881,6 +994,9 @@ namespace dmGameSystem
          g_PhysicsAdapter->m_SetShape               = SetShapeBullet3D;
          g_PhysicsAdapter->m_GetPhysicsEngineType   = GetPhysicsEngineTypeBullet3D;
  
@@ -267,10 +277,10 @@ index 450dbda1b5..8fd404717f 100644
  
  #endif // DM_GAMESYS_COMP_COLLISION_OBJECT_H
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
-index 2ec67baf3f..8d8ea79323 100644
+index 2ec67baf3f..0e37ec87e0 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object_private.h
-@@ -27,6 +27,21 @@ namespace dmGameSystem
+@@ -27,6 +27,23 @@ namespace dmGameSystem
      static const dmhash_t PROP_MASS             = dmHashString64("mass");
      static const dmhash_t PROP_BULLET           = dmHashString64("bullet");
  
@@ -282,6 +292,8 @@ index 2ec67baf3f..8d8ea79323 100644
 +    static const dmhash_t PROP_ANGULAR_SLEEPING_THRESHOLD   = dmHashString64("angular_sleeping_threshold");
 +    static const dmhash_t PROP_TOTAL_FORCE                  = dmHashString64("total_force");
 +    static const dmhash_t PROP_TOTAL_TORQUE                 = dmHashString64("total_torque");
++    static const dmhash_t PROP_POSITION                     = dmHashString64("position");
++    static const dmhash_t PROP_ROTATION                     = dmHashString64("rotation");
 +
 +    // Not implemented yet
 +    // static const dmhash_t PROP_ADDITIONAL_DAMPING                   = dmHashString64("additional_damping");
@@ -317,7 +329,7 @@ index c84c955a3f..f27e0cbd61 100644
  
      struct PhysicsMessage
 diff --git a/engine/physics/src/physics/physics.h b/engine/physics/src/physics/physics.h
-index fbe14ea581..c99dac6b9e 100644
+index fbe14ea581..11e48d88b9 100644
 --- a/engine/physics/src/physics/physics.h
 +++ b/engine/physics/src/physics/physics.h
 @@ -759,6 +759,23 @@ namespace dmPhysics
@@ -360,7 +372,7 @@ index fbe14ea581..c99dac6b9e 100644
      /**
       * Return the world position of the specified 3D collision object.
       *
-@@ -1104,6 +1130,19 @@ namespace dmPhysics
+@@ -1104,6 +1130,22 @@ namespace dmPhysics
      bool GetMaskBit3D(HCollisionObject3D collision_object, uint16_t groupbit);
      void SetMaskBit3D(HWorld3D world, HCollisionObject3D collision_object, uint16_t groupbit, bool boolvalue);
  
@@ -377,10 +389,13 @@ index fbe14ea581..c99dac6b9e 100644
 +    float GetAngularSleepingThreshold3D(HCollisionObject3D collision_object);
 +    void SetAngularSleepingThreshold3D(HCollisionObject3D collision_object, float angular_sleeping_threshold);
 +
++    dmVMath::Vector3 GetPosition3D(HContext3D context, HCollisionObject3D collision_object);
++    dmVMath::Quat GetRotation3D(HContext3D context, HCollisionObject3D collision_object);
++
      /**
       * Container of data for ray cast queries.
       */
-@@ -1436,6 +1475,9 @@ namespace dmPhysics
+@@ -1436,6 +1478,9 @@ namespace dmPhysics
      void              SetCollisionShapeRadius2D(HWorld2D world, HCollisionShape2D shape, float radius);
      void              SetCollisionShapeBoxDimensions2D(HWorld2D world, HCollisionShape2D shape, dmVMath::Quat rotation, float w, float h);
      void              SynchronizeObject2D(HWorld2D world, HCollisionObject2D collision_object);
@@ -391,7 +406,7 @@ index fbe14ea581..c99dac6b9e 100644
  
  #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..5f1e8d3268 100644
+index 69c27889f3..836e45748d 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
 @@ -744,6 +744,10 @@ namespace dmPhysics
@@ -461,7 +476,7 @@ index 69c27889f3..5f1e8d3268 100644
      static Point3 GetWorldPosition(HContext3D context, btCollisionObject* collision_object)
      {
          const btVector3& bt_position = collision_object->getWorldTransform().getOrigin();
-@@ -1170,6 +1216,107 @@ namespace dmPhysics
+@@ -1170,6 +1216,131 @@ namespace dmPhysics
  		}
  	}
  
@@ -557,6 +572,30 @@ index 69c27889f3..5f1e8d3268 100644
 +        }
 +    }
 +
++    Vector3 GetPosition3D(HContext3D context, HCollisionObject3D collision_object)
++    {
++        Vector3 position(0.0f, 0.0f, 0.0f);
++        btRigidBody* body = btRigidBody::upcast(GetCollisionObject(collision_object));
++        if (body != 0x0)
++        {
++            const btVector3& v = body->getWorldTransform().getOrigin();
++            FromBt(v, position, context->m_InvScale);
++        }
++        return position;
++    }
++
++    Quat GetRotation3D(HContext3D context, HCollisionObject3D collision_object)
++    {
++        Quat rotation(0.0f, 0.0f, 0.0f, 1.0f);
++        btRigidBody* body = btRigidBody::upcast(GetCollisionObject(collision_object));
++        if (body != 0x0)
++        {
++            const btQuaternion& v = body->getWorldTransform().getRotation();
++            rotation = Quat(v.getX(), v.getY(), v.getZ(), v.getW());
++        }
++        return rotation;
++    }
++
 +    // bool GetAdditionalDamping3D(HCollisionObject3D collision_object) {
 +    //     btCollisionObject* co = GetCollisionObject(collision_object);
 +    //     btRigidBody* body = btRigidBody::upcast(co);
@@ -569,7 +608,7 @@ index 69c27889f3..5f1e8d3268 100644
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
          if (!world->m_RayCastRequests.Full())
-@@ -1368,4 +1515,14 @@ namespace dmPhysics
+@@ -1368,4 +1539,14 @@ namespace dmPhysics
              }
          }
      }
