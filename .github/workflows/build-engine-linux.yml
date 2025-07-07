@@ -13,7 +13,7 @@ on:
 
 env:
   DM_PACKAGES_URL: https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/
-  BUILD_BRANCH: 1.10.2
+  BUILD_BRANCH: 1.10.3
   # BUILD_BRANCH: 04f21d84f5acd3e9bfae06121729afb2a4c69ab0
 
 jobs:
