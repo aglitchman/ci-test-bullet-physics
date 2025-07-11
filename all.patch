@@ -406,10 +406,10 @@ index fbe14ea581..11e48d88b9 100644
  
  #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..30efb1c7b3 100644
+index 69c27889f3..5c3906fde9 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
-@@ -143,11 +143,23 @@ namespace dmPhysics
+@@ -143,11 +143,25 @@ namespace dmPhysics
          ToBt(params.m_WorldMin, world_aabb_min, context->m_Scale);
          btVector3 world_aabb_max;
          ToBt(params.m_WorldMax, world_aabb_max, context->m_Scale);
@@ -419,11 +419,13 @@ index 69c27889f3..30efb1c7b3 100644
 +        {
 +            dmLogInfo("PATCH: btDbvtBroadphase as broadphase");
 +            m_Broadphase = new btDbvtBroadphase();
++            m_OverlappingPairCache = 0;
 +            broadphase = m_Broadphase;
 +        }
 +        else
 +        {
 +            dmLogInfo("PATCH: btAxisSweep3 as broadphase");
++            m_Broadphase = 0;
 +            m_OverlappingPairCache = new btAxisSweep3(world_aabb_min,world_aabb_max, params.m_MaxCollisionObjectsCount);
 +            broadphase = m_OverlappingPairCache;
 +        }
@@ -435,7 +437,7 @@ index 69c27889f3..30efb1c7b3 100644
          m_DynamicsWorld->setGravity(btVector3(context->m_Gravity.getX(), context->m_Gravity.getY(), context->m_Gravity.getZ()));
          m_DynamicsWorld->setDebugDrawer(&m_DebugDraw);
  
-@@ -162,7 +174,10 @@ namespace dmPhysics
+@@ -162,7 +176,10 @@ namespace dmPhysics
      {
          delete m_DynamicsWorld;
          delete m_Solver;
@@ -447,7 +449,7 @@ index 69c27889f3..30efb1c7b3 100644
          delete m_Dispatcher;
          delete m_CollisionConfiguration;
      }
-@@ -744,6 +759,10 @@ namespace dmPhysics
+@@ -744,6 +761,10 @@ namespace dmPhysics
              rb_info.m_restitution = data.m_Restitution;
              rb_info.m_linearDamping = data.m_LinearDamping;
              rb_info.m_angularDamping = data.m_AngularDamping;
@@ -458,7 +460,7 @@ index 69c27889f3..30efb1c7b3 100644
              btRigidBody* body = new btRigidBody(rb_info);
              float angular_factor = 1.0f;
              if (data.m_LockedRotation) {
-@@ -885,6 +904,32 @@ namespace dmPhysics
+@@ -885,6 +906,32 @@ namespace dmPhysics
          }
      }
  
@@ -491,7 +493,7 @@ index 69c27889f3..30efb1c7b3 100644
      Vector3 GetTotalForce3D(HContext3D context, HCollisionObject3D collision_object)
      {
          btRigidBody* rigid_body = btRigidBody::upcast(GetCollisionObject(collision_object));
-@@ -901,6 +946,22 @@ namespace dmPhysics
+@@ -901,6 +948,22 @@ namespace dmPhysics
          }
      }
  
@@ -514,7 +516,7 @@ index 69c27889f3..30efb1c7b3 100644
      static Point3 GetWorldPosition(HContext3D context, btCollisionObject* collision_object)
      {
          const btVector3& bt_position = collision_object->getWorldTransform().getOrigin();
-@@ -1170,6 +1231,131 @@ namespace dmPhysics
+@@ -1170,6 +1233,131 @@ namespace dmPhysics
  		}
  	}
  
@@ -646,7 +648,7 @@ index 69c27889f3..30efb1c7b3 100644
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
          if (!world->m_RayCastRequests.Full())
-@@ -1368,4 +1554,14 @@ namespace dmPhysics
+@@ -1368,4 +1556,14 @@ namespace dmPhysics
              }
          }
      }
