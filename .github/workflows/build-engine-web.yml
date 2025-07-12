@@ -79,7 +79,7 @@ jobs:
       - name: Build external libraries
         shell: bash
         run: |
-          ./scripts/build.py shell
+          source ci/env.sh
           ./scripts/build.py build_external --platform=${{ matrix.platform }}
 
       - name: Build
