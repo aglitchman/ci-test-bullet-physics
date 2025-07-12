@@ -80,17 +80,15 @@ jobs:
         shell: bash
         run: ci/ci.sh install --platform=${{ matrix.platform }}
 
-      - name: Build external libraries
-        shell: bash
-        run: |
-          OLDPATH=$PATH
-          source ci/env.sh
-          export PATH=$PATH:$OLDPATH
-          ./scripts/build.py build_external --platform=${{ matrix.platform }}
-
       - name: Build
         shell: bash
         run: ci/ci.sh --platform=${{ matrix.platform }} --skip-builtins --skip-tests --skip-build-tests --skip-docs engine
+
+      - name: Build external libraries
+        shell: bash
+        run: |
+          source ci/env.sh
+          ./scripts/build.py build_external --platform=${{ matrix.platform }}
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
