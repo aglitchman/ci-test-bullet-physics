@@ -693,6 +693,20 @@ index 3613b8dc99..44ac73fe55 100644
  		//btContinuousConvexCollision convexCaster(castShape,convexShape,&simplexSolver,0);
  #endif //#USE_SUBSIMPLEX_CONVEX_CAST
  
+diff --git a/external/bullet3d/wscript b/external/bullet3d/wscript
+index 42f51c8347..1f846631d6 100644
+--- a/external/bullet3d/wscript
++++ b/external/bullet3d/wscript
+@@ -68,7 +68,8 @@ def build(bld):
+                            target = 'LinearMath')
+     linear_math.install_path = None
+ 
+-    linear_math.env.append_unique('CXXFLAGS', "-Wno-c++11-narrowing")
++    if bld.env.PLATFORM not in ('win32', 'x86_64-win32'):
++        linear_math.env.append_unique('CXXFLAGS', "-Wno-c++11-narrowing")
+ 
+     if bld.env.PLATFORM in ('win32', 'x86_64-win32'):
+         bld.env.STLIB_ST         = 'lib%s.lib'
 diff --git a/scripts/build.py b/scripts/build.py
 index ed172050f9..cd0f572678 100755
 --- a/scripts/build.py
