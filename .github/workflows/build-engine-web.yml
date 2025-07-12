@@ -79,7 +79,9 @@ jobs:
       - name: Build external libraries
         shell: bash
         run: |
+          OLDPATH=$PATH
           source ci/env.sh
+          export PATH=$PATH:$OLDPATH
           ./scripts/build.py build_external --platform=${{ matrix.platform }}
 
       - name: Build
