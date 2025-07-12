@@ -76,6 +76,10 @@ jobs:
       - name: Install dependencies
         run: ci/ci.sh install --platform=${{ matrix.platform }}
 
+      - name: Build external libraries
+        shell: bash
+        run: ./scripts/build.py build_external --platform=${{ matrix.platform }}
+
       - name: Build
         run: ci/ci.sh --platform=${{ matrix.platform }} --skip-builtins --skip-tests --skip-build-tests --skip-docs engine
 
@@ -97,7 +101,7 @@ jobs:
         shell: bash
         run: |
           mkdir -p patch/defold_patch/lib/${{ matrix.platform }}
-          for lib in $(ls tmp/dynamo_home/lib/${{ matrix.platform }} | grep -E "(gamesys|physics_3d)\\."); do
+          for lib in $(ls tmp/dynamo_home/lib/${{ matrix.platform }} | grep -E "(gamesys|physics_3d|BulletCollision|BulletDynamics)\\."); do
             cp -r "tmp/dynamo_home/lib/${{ matrix.platform }}/${lib}" "patch/defold_patch/lib/${{ matrix.platform }}/${lib%.*}_patch.${lib##*.}"
           done
 

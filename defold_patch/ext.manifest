@@ -3,11 +3,11 @@ name: "defold_patch"
 platforms:
     wasm-web:
         context:
-            excludeLibs: [gamesys, physics_3d]
+            excludeLibs: [gamesys, physics_3d, BulletCollision, BulletDynamics]
 
     x86_64-win32:
         context:
-            excludeLibs: [libgamesys, libphysics_3d]
+            excludeLibs: [libgamesys, libphysics_3d, libBulletCollision, libBulletDynamics]
 
 #            symbols: [GraphicsAdapterVulkan]
 #            libs: [libplatform_vulkan.lib, vulkan-1.lib]

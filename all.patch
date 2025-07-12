@@ -675,6 +675,24 @@ index c8bea11ef9..b285ee08c3 100644
          btSequentialImpulseConstraintSolver*    m_Solver;
          btDiscreteDynamicsWorld*                m_DynamicsWorld;
          GetWorldTransformCallback               m_GetWorldTransform;
+diff --git a/external/bullet3d/package/bullet-2.77/src/BulletCollision/CollisionDispatch/btCollisionWorld.cpp b/external/bullet3d/package/bullet-2.77/src/BulletCollision/CollisionDispatch/btCollisionWorld.cpp
+index 3613b8dc99..44ac73fe55 100644
+--- a/external/bullet3d/package/bullet-2.77/src/BulletCollision/CollisionDispatch/btCollisionWorld.cpp
++++ b/external/bullet3d/package/bullet-2.77/src/BulletCollision/CollisionDispatch/btCollisionWorld.cpp
+@@ -264,11 +264,11 @@ void	btCollisionWorld::rayTestSingle(const btTransform& rayFromTrans,const btTra
+ 
+ 		btConvexShape* convexShape = (btConvexShape*) collisionShape;
+ 		btVoronoiSimplexSolver	simplexSolver;
+-#define USE_SUBSIMPLEX_CONVEX_CAST 1
++#define USE_SUBSIMPLEX_CONVEX_CAST 0
+ #ifdef USE_SUBSIMPLEX_CONVEX_CAST
+ 		btSubsimplexConvexCast convexCaster(castShape,convexShape,&simplexSolver);
+ #else
+-		//btGjkConvexCast	convexCaster(castShape,convexShape,&simplexSolver);
++		btGjkConvexCast	convexCaster(castShape,convexShape,&simplexSolver);
+ 		//btContinuousConvexCollision convexCaster(castShape,convexShape,&simplexSolver,0);
+ #endif //#USE_SUBSIMPLEX_CONVEX_CAST
+ 
 diff --git a/scripts/build.py b/scripts/build.py
 index ed172050f9..cd0f572678 100755
 --- a/scripts/build.py
