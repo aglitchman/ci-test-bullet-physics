@@ -12,6 +12,7 @@ rm -f all.patch
 # cp packages/astcenc-8b0aa01-arm64-linux-GLES.tar.gz $TARGET_DIR/astcenc-8b0aa01-arm64-linux-GLES.tar.gz
 
 cd $TARGET_DIR
+git pull
 git add .
 # Get the next commit number by counting commits with "Update patch #" pattern
 COMMIT_COUNT=$(git log --oneline --grep="Update patch #" | wc -l)
