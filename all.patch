@@ -406,7 +406,7 @@ index fbe14ea581..11e48d88b9 100644
  
  #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..5c3906fde9 100644
+index 69c27889f3..70cfc4f080 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
 @@ -143,11 +143,25 @@ namespace dmPhysics
@@ -449,7 +449,48 @@ index 69c27889f3..5c3906fde9 100644
          delete m_Dispatcher;
          delete m_CollisionConfiguration;
      }
-@@ -744,6 +761,10 @@ namespace dmPhysics
+@@ -627,14 +644,34 @@ namespace dmPhysics
+         assert(sizeof(btScalar) == sizeof(float));
+         float scale = context->m_Scale;
+         const uint32_t elem_count = vertex_count * 3;
+-        float* v = new float[elem_count];
+-        for (uint32_t i = 0; i < elem_count; ++i)
++        if (vertices[0] == 0.0f && vertices[1] == 0.0f && vertices[2] == 0.0f && (vertex_count - 1) % 9 == 0)
++        {
++            dmLogInfo("PATCH: Building trimesh shape");
++            // Concave Shape
++            btTriangleMesh* trimesh = new btTriangleMesh();
++            for (uint32_t i = 3; i < elem_count; i += 9)
++            {
++                const btVector3 v1(vertices[i + 0] * scale, vertices[i + 1] * scale, vertices[i + 2] * scale);
++                const btVector3 v2(vertices[i + 3] * scale, vertices[i + 4] * scale, vertices[i + 5] * scale);
++                const btVector3 v3(vertices[i + 6] * scale, vertices[i + 7] * scale, vertices[i + 8] * scale);
++                trimesh->addTriangle(v1, v2, v3);
++            }
++            bool useQuantizedBvhTree = true;
++            btCollisionShape* trimeshShape  = new btBvhTriangleMeshShape(trimesh, useQuantizedBvhTree);
++            return trimeshShape;
++        }
++        else
+         {
+-            v[i] = vertices[i] * scale;
++            // Convex Shape
++            float* v = new float[elem_count];
++            for (uint32_t i = 0; i < elem_count; ++i)
++            {
++                v[i] = vertices[i] * scale;
++            }
++            btConvexHullShape* hull = new btConvexHullShape(v, vertex_count, sizeof(float) * 3);
++            delete [] v;
++            return hull;
+         }
+-        btConvexHullShape* hull = new btConvexHullShape(v, vertex_count, sizeof(float) * 3);
+-        delete [] v;
+-        return hull;
+     }
+ 
+     void DeleteCollisionShape3D(HCollisionShape3D shape)
+@@ -744,6 +781,10 @@ namespace dmPhysics
              rb_info.m_restitution = data.m_Restitution;
              rb_info.m_linearDamping = data.m_LinearDamping;
              rb_info.m_angularDamping = data.m_AngularDamping;
@@ -460,7 +501,7 @@ index 69c27889f3..5c3906fde9 100644
              btRigidBody* body = new btRigidBody(rb_info);
              float angular_factor = 1.0f;
              if (data.m_LockedRotation) {
-@@ -885,6 +906,32 @@ namespace dmPhysics
+@@ -885,6 +926,32 @@ namespace dmPhysics
          }
      }
  
@@ -493,7 +534,7 @@ index 69c27889f3..5c3906fde9 100644
      Vector3 GetTotalForce3D(HContext3D context, HCollisionObject3D collision_object)
      {
          btRigidBody* rigid_body = btRigidBody::upcast(GetCollisionObject(collision_object));
-@@ -901,6 +948,22 @@ namespace dmPhysics
+@@ -901,6 +968,22 @@ namespace dmPhysics
          }
      }
  
@@ -516,7 +557,7 @@ index 69c27889f3..5c3906fde9 100644
      static Point3 GetWorldPosition(HContext3D context, btCollisionObject* collision_object)
      {
          const btVector3& bt_position = collision_object->getWorldTransform().getOrigin();
-@@ -1170,6 +1233,131 @@ namespace dmPhysics
+@@ -1170,6 +1253,131 @@ namespace dmPhysics
  		}
  	}
  
@@ -648,7 +689,7 @@ index 69c27889f3..5c3906fde9 100644
      void RequestRayCast3D(HWorld3D world, const RayCastRequest& request)
      {
          if (!world->m_RayCastRequests.Full())
-@@ -1368,4 +1556,14 @@ namespace dmPhysics
+@@ -1368,4 +1576,14 @@ namespace dmPhysics
              }
          }
      }
