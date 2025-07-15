@@ -406,7 +406,7 @@ index fbe14ea581..11e48d88b9 100644
  
  #endif // DM_PHYSICS_H
 diff --git a/engine/physics/src/physics/physics_3d.cpp b/engine/physics/src/physics/physics_3d.cpp
-index 69c27889f3..3213b4056e 100644
+index 69c27889f3..8ec74fddc7 100644
 --- a/engine/physics/src/physics/physics_3d.cpp
 +++ b/engine/physics/src/physics/physics_3d.cpp
 @@ -143,11 +143,25 @@ namespace dmPhysics
@@ -455,8 +455,8 @@ index 69c27889f3..3213b4056e 100644
          const uint32_t elem_count = vertex_count * 3;
 -        float* v = new float[elem_count];
 -        for (uint32_t i = 0; i < elem_count; ++i)
-+        dmLogInfo("PATCH: NewConvexHullShape3D, %.02f %.02f %.02f, vertex count %d", vertices[0], vertices[1], vertices[2], vertex_count);
-+        if (vertices[0] == 0.0f && vertices[1] == 0.0f && vertices[2] == 0.0f && (vertex_count - 1) % 9 == 0)
++        // dmLogInfo("PATCH: NewConvexHullShape3D, %.02f %.02f %.02f, vertex count %d", vertices[0], vertices[1], vertices[2], vertex_count);
++        if (vertices[0] == 0.0f && vertices[1] == 0.0f && vertices[2] == 0.0f && (vertex_count - 1) % 3 == 0)
 +        {
 +            dmLogInfo("PATCH: Building trimesh shape");
 +            // Concave Shape
