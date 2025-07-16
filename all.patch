@@ -13,6 +13,66 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_TOOLCHAIN=f"Microsoft-Visual-Studio-2022-{VERSION_WINDOWS_MSVC_2022}"
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
+diff --git a/engine/gameobject/src/gameobject/gameobject.cpp b/engine/gameobject/src/gameobject/gameobject.cpp
+index 4b7a35021d..c9ba5d889e 100644
+--- a/engine/gameobject/src/gameobject/gameobject.cpp
++++ b/engine/gameobject/src/gameobject/gameobject.cpp
+@@ -3823,4 +3823,9 @@ namespace dmGameObject
+         }
+         return count;
+     }
++
++    float FixedAccumTime(HCollection collection)
++    {
++        return collection->m_Collection->m_FixedAccumTime;
++    }
+ }
+diff --git a/engine/gameobject/src/gameobject/gameobject.h b/engine/gameobject/src/gameobject/gameobject.h
+index 27717ff598..f50d20a493 100644
+--- a/engine/gameobject/src/gameobject/gameobject.h
++++ b/engine/gameobject/src/gameobject/gameobject.h
+@@ -391,6 +391,13 @@ namespace dmGameObject
+      * tracked by the collection, e.g resource.release(id) has been called
+      */
+     void RemoveDynamicResourceHash(HCollection collection, dmhash_t resource_hash);
++
++    /**
++     * Get the accumulated time of the collection
++     * @param collection Collection
++     * @return The accumulated time of the collection
++     */
++    float FixedAccumTime(HCollection collection);
+ }
+ 
+ #endif // DM_GAMEOBJECT_H
+diff --git a/engine/gameobject/src/gameobject/gameobject_script.cpp b/engine/gameobject/src/gameobject/gameobject_script.cpp
+index 82be8ba5a7..e3d43201b1 100644
+--- a/engine/gameobject/src/gameobject/gameobject_script.cpp
++++ b/engine/gameobject/src/gameobject/gameobject_script.cpp
+@@ -2091,6 +2091,15 @@ namespace dmGameObject
+         return 1;
+     }
+ 
++    int Script_GetAccumTime(lua_State* L)
++    {
++        DM_LUA_STACK_CHECK(L, 1);
++        ScriptInstance* i = ScriptInstance_Check(L);
++        Instance* instance = i->m_Instance;
++        lua_pushnumber(L, dmGameObject::FixedAccumTime(instance->m_Collection->m_HCollection));
++        return 1;
++    }
++
+     static const luaL_reg GO_methods[] =
+     {
+         {"get",                     Script_Get},
+@@ -2119,6 +2128,7 @@ namespace dmGameObject
+         {"exists",                  Script_Exists},
+         {"world_to_local_position", Script_WorldToLocalPosition},
+         {"world_to_local_transform",Script_WorldToLocalTransfrom},
++        {"get_accum_time",          Script_GetAccumTime},
+         {0, 0}
+     };
+ 
 diff --git a/engine/gamesys/proto/gamesys/physics_ddf.proto b/engine/gamesys/proto/gamesys/physics_ddf.proto
 index 41f047f835..58dd35ff2f 100644
 --- a/engine/gamesys/proto/gamesys/physics_ddf.proto
