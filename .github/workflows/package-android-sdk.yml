@@ -24,6 +24,11 @@ jobs:
         with:
           python-version: 3.13
 
+      - name: Download Clang 16.0.0
+        run: |
+          mkdir -p local_sdks
+          wget "https://github.com/llvm/llvm-project/releases/download/llvmorg-16.0.0/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz" -O "./local_sdks/clang+llvm-16.0.0-x86_64-linux-gnu-ubuntu-18.04.tar.xz"
+
       - name: Package SDK
         shell: bash
         run: ./scripts/package/package_android_sdk.sh
