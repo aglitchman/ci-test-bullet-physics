@@ -34,6 +34,11 @@ jobs:
       contents: write
 
     steps:
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          android: false
+
       - name: Checkout Defold
         uses: actions/checkout@v4
         with:
@@ -71,11 +76,6 @@ jobs:
         with:
           java-version: '21.0.5+11.0.LTS'
           distribution: temurin
-
-      - name: Install LLVM and Clang
-        uses: KyleMayes/install-llvm-action@v2
-        with:
-          version: 16.0.0
 
       - name: Install dependencies
         run: ci/ci.sh install --platform=${{ matrix.platform }}
