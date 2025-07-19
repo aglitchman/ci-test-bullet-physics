@@ -1,4 +1,4 @@
-name: Package Win32 SDK
+name: Package Android SDK
 
 # Controls when the workflow will run
 on:
@@ -9,8 +9,8 @@ env:
   BUILD_BRANCH: 1.10.3
 
 jobs:
-  pkg-win32-sdk:
-    runs-on: windows-2022
+  pkg-android-sdk:
+    runs-on: ubuntu-22.04
 
     steps:
       - name: Checkout Defold
@@ -24,9 +24,13 @@ jobs:
         with:
           python-version: 3.13
 
-      - name: Package SDKS
+      - name: Package SDK
         shell: bash
-        run: ./scripts/package/package_win32_sdk.sh
+        run: ./scripts/package/package_android_sdk.sh
+
+      - name: Package NDK
+        shell: bash
+        run: ./scripts/package/package_android_ndk.sh
 
       - name: Upload Artifact
         uses: actions/upload-artifact@v4
@@ -34,4 +38,3 @@ jobs:
           name: local_sdks
           path: local_sdks
           if-no-files-found: error
-
