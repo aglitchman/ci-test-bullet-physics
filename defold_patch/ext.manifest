@@ -1,6 +1,14 @@
 name: "defold_patch"
 
 platforms:
+    armv7-android:
+        context:
+            excludeLibs: [gameobject, gamesys, physics_3d, BulletCollision, BulletDynamics]
+
+    arm64-android:
+        context:
+            excludeLibs: [gameobject, gamesys, physics_3d, BulletCollision, BulletDynamics]
+
     wasm-web:
         context:
             excludeLibs: [gameobject, gamesys, physics_3d, BulletCollision, BulletDynamics]
@@ -9,5 +17,5 @@ platforms:
         context:
             excludeLibs: [libgameobject, libgamesys, libphysics_3d, libBulletCollision, libBulletDynamics]
 
-#            symbols: [GraphicsAdapterVulkan]
-#            libs: [libplatform_vulkan.lib, vulkan-1.lib]
+# symbols: [GraphicsAdapterVulkan]
+# libs: [libplatform_vulkan.lib, vulkan-1.lib]

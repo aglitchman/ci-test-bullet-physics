@@ -21,7 +21,7 @@ env:
   ANDROID_SDK_RUN_ID: ${{ vars.ANDROID_SDK_RUN_ID }}
 
 jobs:
-  bld-eng-web:
+  bld-eng-android:
     strategy:
       matrix:
         platform: [armv7-android, arm64-android]
