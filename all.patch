@@ -14,10 +14,10 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
 diff --git a/engine/gameobject/src/gameobject/gameobject.cpp b/engine/gameobject/src/gameobject/gameobject.cpp
-index 4b7a35021d..c9ba5d889e 100644
+index 4b7a35021d..c55b7026f7 100644
 --- a/engine/gameobject/src/gameobject/gameobject.cpp
 +++ b/engine/gameobject/src/gameobject/gameobject.cpp
-@@ -3823,4 +3823,9 @@ namespace dmGameObject
+@@ -3823,4 +3823,14 @@ namespace dmGameObject
          }
          return count;
      }
@@ -26,12 +26,17 @@ index 4b7a35021d..c9ba5d889e 100644
 +    {
 +        return collection->m_Collection->m_FixedAccumTime;
 +    }
++
++    void ResetFixedAccumTime(HCollection collection)
++    {
++        collection->m_Collection->m_FixedAccumTime = 0.0f;
++    }
  }
 diff --git a/engine/gameobject/src/gameobject/gameobject.h b/engine/gameobject/src/gameobject/gameobject.h
-index 27717ff598..f50d20a493 100644
+index 27717ff598..e136f6c924 100644
 --- a/engine/gameobject/src/gameobject/gameobject.h
 +++ b/engine/gameobject/src/gameobject/gameobject.h
-@@ -391,6 +391,13 @@ namespace dmGameObject
+@@ -391,6 +391,19 @@ namespace dmGameObject
       * tracked by the collection, e.g resource.release(id) has been called
       */
      void RemoveDynamicResourceHash(HCollection collection, dmhash_t resource_hash);
@@ -42,14 +47,20 @@ index 27717ff598..f50d20a493 100644
 +     * @return The accumulated time of the collection
 +     */
 +    float FixedAccumTime(HCollection collection);
++
++    /**
++     * Reset the fixed accum time of the collection
++     * @param collection Collection
++     */
++    void ResetFixedAccumTime(HCollection collection);
  }
  
  #endif // DM_GAMEOBJECT_H
 diff --git a/engine/gameobject/src/gameobject/gameobject_script.cpp b/engine/gameobject/src/gameobject/gameobject_script.cpp
-index 82be8ba5a7..e3d43201b1 100644
+index 82be8ba5a7..b5140764d3 100644
 --- a/engine/gameobject/src/gameobject/gameobject_script.cpp
 +++ b/engine/gameobject/src/gameobject/gameobject_script.cpp
-@@ -2091,6 +2091,15 @@ namespace dmGameObject
+@@ -2091,6 +2091,24 @@ namespace dmGameObject
          return 1;
      }
  
@@ -62,10 +73,19 @@ index 82be8ba5a7..e3d43201b1 100644
 +        return 1;
 +    }
 +
++    int Script_ResetAccumTime(lua_State* L)
++    {
++        DM_LUA_STACK_CHECK(L, 0);
++        ScriptInstance* i = ScriptInstance_Check(L);
++        Instance* instance = i->m_Instance;
++        dmGameObject::ResetFixedAccumTime(instance->m_Collection->m_HCollection);
++        return 0;
++    }
++
      static const luaL_reg GO_methods[] =
      {
          {"get",                     Script_Get},
-@@ -2119,6 +2128,7 @@ namespace dmGameObject
+@@ -2119,6 +2137,7 @@ namespace dmGameObject
          {"exists",                  Script_Exists},
          {"world_to_local_position", Script_WorldToLocalPosition},
          {"world_to_local_transform",Script_WorldToLocalTransfrom},
