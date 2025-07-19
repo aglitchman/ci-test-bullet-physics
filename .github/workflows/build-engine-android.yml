@@ -1,7 +1,7 @@
 # Keep this in sync with
 # https://github.com/defold/defold/blob/dev/.github/workflows/engine-nightly.yml
 
-name: Build Defold Web (.wasm)
+name: Build Defold Android
 
 # Controls when the workflow will run
 on:
