@@ -38,6 +38,7 @@ jobs:
         uses: jlumbroso/free-disk-space@main
         with:
           android: false
+          large-packages: false
 
       - name: Checkout Defold
         uses: actions/checkout@v4
