@@ -14,7 +14,7 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
 diff --git a/engine/engine/src/engine.cpp b/engine/engine/src/engine.cpp
-index 3c74e2e5fc..66e546d98a 100644
+index faad91919b..e5f12fb144 100644
 --- a/engine/engine/src/engine.cpp
 +++ b/engine/engine/src/engine.cpp
 @@ -21,6 +21,7 @@
@@ -35,7 +35,7 @@ index 3c74e2e5fc..66e546d98a 100644
  namespace dmEngine
  {
  #if !(defined(DM_PLATFORM_VENDOR))
-@@ -325,6 +329,11 @@ namespace dmEngine
+@@ -335,6 +339,11 @@ namespace dmEngine
          m_AccumFrameTime = 0;
          m_PreviousFrameTime = dmTime::GetMonotonicTime();
          m_HttpCache = 0;
@@ -47,15 +47,15 @@ index 3c74e2e5fc..66e546d98a 100644
      }
  
      HEngine New(dmEngineService::HEngineService engine_service)
-@@ -1074,6 +1083,7 @@ namespace dmEngine
+@@ -1082,6 +1091,7 @@ namespace dmEngine
+         engine->m_RunWhileIconified = dmConfigFile::GetInt(engine->m_Config, "engine.run_while_iconified", 0);
+ #endif
  
-         engine->m_FixedUpdateFrequency = dmConfigFile::GetInt(engine->m_Config, "engine.fixed_update_frequency", 60);
-         engine->m_MaxTimeStep = dmConfigFile::GetFloat(engine->m_Config, "engine.max_time_step", 0.5);
 +        engine->m_TimeStepSmoothing = dmConfigFile::GetInt(engine->m_Config, "engine.time_step_smoothing", 1) != 0;
- 
+         engine->m_FixedUpdateFrequency = dmConfigFile::GetInt(engine->m_Config, "engine.fixed_update_frequency", 60);
+         engine->m_MaxTimeStep = dmConfigFile::GetFloat(engine->m_Config, "engine.max_time_step", 1.0f / 30);
          dmGameSystem::OnWindowCreated(physical_width, physical_height);
- 
-@@ -2025,6 +2035,49 @@ bail:
+@@ -2041,6 +2051,49 @@ bail:
          engine->m_Stats.m_TotalTime += dt;
      }
  
@@ -105,7 +105,7 @@ index 3c74e2e5fc..66e546d98a 100644
      static void CalcTimeStep(HEngine engine, float& step_dt, uint32_t& num_steps)
      {
          uint64_t time = dmTime::GetMonotonicTime();
-@@ -2038,6 +2091,9 @@ bail:
+@@ -2054,6 +2107,9 @@ bail:
              frame_dt = engine->m_MaxTimeStep;
          }
  
@@ -134,10 +134,10 @@ index 32dcc0fc7f..37f1935d4b 100644
      };
  
 diff --git a/engine/gameobject/src/gameobject/gameobject.cpp b/engine/gameobject/src/gameobject/gameobject.cpp
-index 4b7a35021d..bc405a65bd 100644
+index c99173ace5..15937050cc 100644
 --- a/engine/gameobject/src/gameobject/gameobject.cpp
 +++ b/engine/gameobject/src/gameobject/gameobject.cpp
-@@ -3823,4 +3823,14 @@ namespace dmGameObject
+@@ -3858,4 +3858,14 @@ namespace dmGameObject
          }
          return count;
      }
@@ -153,10 +153,10 @@ index 4b7a35021d..bc405a65bd 100644
 +    }
  }
 diff --git a/engine/gameobject/src/gameobject/gameobject.h b/engine/gameobject/src/gameobject/gameobject.h
-index 27717ff598..887648a9a8 100644
+index b54f3e1338..8b4fea26b2 100644
 --- a/engine/gameobject/src/gameobject/gameobject.h
 +++ b/engine/gameobject/src/gameobject/gameobject.h
-@@ -391,6 +391,20 @@ namespace dmGameObject
+@@ -390,6 +390,20 @@ namespace dmGameObject
       * tracked by the collection, e.g resource.release(id) has been called
       */
      void RemoveDynamicResourceHash(HCollection collection, dmhash_t resource_hash);
@@ -178,7 +178,7 @@ index 27717ff598..887648a9a8 100644
  
  #endif // DM_GAMEOBJECT_H
 diff --git a/engine/gameobject/src/gameobject/gameobject_script.cpp b/engine/gameobject/src/gameobject/gameobject_script.cpp
-index 82be8ba5a7..264f83b7ab 100644
+index 19ff85da30..59ecfc3a56 100644
 --- a/engine/gameobject/src/gameobject/gameobject_script.cpp
 +++ b/engine/gameobject/src/gameobject/gameobject_script.cpp
 @@ -2091,6 +2091,25 @@ namespace dmGameObject
@@ -266,7 +266,7 @@ index 41f047f835..58dd35ff2f 100644
   *
   * This message is broadcasted to every component of an instance that has a collision object,
 diff --git a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
-index 6b88707a93..e0e90b19ec 100644
+index 346fd47693..8c11fa774e 100644
 --- a/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 +++ b/engine/gamesys/src/gamesys/components/bullet3d/comp_collision_object_bullet3d.cpp
 @@ -77,6 +77,8 @@ namespace dmGameSystem
@@ -428,7 +428,7 @@ index 6b88707a93..e0e90b19ec 100644
          //g_PhysicsAdapter->m_SetCollisionFlipH      = SetCollisionFlipHBullet3D;
          //g_PhysicsAdapter->m_SetCollisionFlipV      = SetCollisionFlipVBullet3D;
 diff --git a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
-index a5d96d980a..2706e1414b 100644
+index 83700541eb..45dc95cd1f 100644
 --- a/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 +++ b/engine/gamesys/src/gamesys/components/comp_collision_object.cpp
 @@ -21,6 +21,7 @@
@@ -935,7 +935,7 @@ index 42f51c8347..1f846631d6 100644
      if bld.env.PLATFORM in ('win32', 'x86_64-win32'):
          bld.env.STLIB_ST         = 'lib%s.lib'
 diff --git a/scripts/build.py b/scripts/build.py
-index ed172050f9..cd0f572678 100755
+index feae5d13c5..ee9ea26acd 100755
 --- a/scripts/build.py
 +++ b/scripts/build.py
 @@ -2362,8 +2362,15 @@ class Configuration(object):
