@@ -14,7 +14,7 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
 diff --git a/engine/engine/src/engine.cpp b/engine/engine/src/engine.cpp
-index faad91919b..e5f12fb144 100644
+index faad91919b..3be135ddb7 100644
 --- a/engine/engine/src/engine.cpp
 +++ b/engine/engine/src/engine.cpp
 @@ -21,6 +21,7 @@
@@ -51,7 +51,7 @@ index faad91919b..e5f12fb144 100644
          engine->m_RunWhileIconified = dmConfigFile::GetInt(engine->m_Config, "engine.run_while_iconified", 0);
  #endif
  
-+        engine->m_TimeStepSmoothing = dmConfigFile::GetInt(engine->m_Config, "engine.time_step_smoothing", 1) != 0;
++        engine->m_TimeStepSmoothing = dmConfigFile::GetInt(engine->m_Config, "engine.time_step_smoothing", 0) != 0;
          engine->m_FixedUpdateFrequency = dmConfigFile::GetInt(engine->m_Config, "engine.fixed_update_frequency", 60);
          engine->m_MaxTimeStep = dmConfigFile::GetFloat(engine->m_Config, "engine.max_time_step", 1.0f / 30);
          dmGameSystem::OnWindowCreated(physical_width, physical_height);
@@ -89,7 +89,7 @@ index faad91919b..e5f12fb144 100644
 +        {
 +            sum += sorted_times[i];
 +        }
-+        float mean = sum / 7.0f;
++        float mean = sum / (float)(Engine::TIME_HISTORY_SIZE - 4);
 +
 +        // Lerp from last frame time to calculated mean for additional smoothness
 +        // Using a lerp factor of 0.1 for gentle smoothing
@@ -116,7 +116,7 @@ index faad91919b..e5f12fb144 100644
          if (engine->m_UpdateFrequency == 0)
          {
 diff --git a/engine/engine/src/engine_private.h b/engine/engine/src/engine_private.h
-index 32dcc0fc7f..37f1935d4b 100644
+index 32dcc0fc7f..1b41c779bf 100644
 --- a/engine/engine/src/engine_private.h
 +++ b/engine/engine/src/engine_private.h
 @@ -172,6 +172,13 @@ namespace dmEngine
@@ -124,7 +124,7 @@ index 32dcc0fc7f..37f1935d4b 100644
          float                                       m_MaxTimeStep;
  
 +        // Time step smoothing (BitSquid algorithm)
-+        static const uint32_t                       TIME_HISTORY_SIZE = 11;
++        static const uint32_t                       TIME_HISTORY_SIZE = 15;
 +        float                                       m_TimeHistory[TIME_HISTORY_SIZE];
 +        uint32_t                                    m_TimeHistoryIndex;
 +        uint32_t                                    m_TimeHistoryCount;

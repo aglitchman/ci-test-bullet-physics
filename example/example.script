@@ -1,6 +1,7 @@
 function init(self)
 	print("Hello!")
 	msg.post(".", "acquire_input_focus")
+	msg.post("@system:", "toggle_profile")
 
 	print("angular_damping", go.get("/object1#collisionobject", "angular_damping"))
 	print("angular_factor", go.get("/object1#collisionobject", "angular_factor"))
