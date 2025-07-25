@@ -13,6 +13,126 @@ index 75d8864a2f..7b95642388 100644
  PACKAGES_WIN32_TOOLCHAIN=f"Microsoft-Visual-Studio-2022-{VERSION_WINDOWS_MSVC_2022}"
  PACKAGES_WIN32_SDK_10=f"WindowsKits-{VERSION_WINDOWS_SDK_10}"
  
+diff --git a/engine/engine/src/engine.cpp b/engine/engine/src/engine.cpp
+index 3c74e2e5fc..66e546d98a 100644
+--- a/engine/engine/src/engine.cpp
++++ b/engine/engine/src/engine.cpp
+@@ -21,6 +21,7 @@
+ #include <sys/stat.h>
+ 
+ #include <stdio.h>
++#include <string.h>
+ #include <algorithm>
+ 
+ #include <crash/crash.h>
+@@ -99,6 +100,9 @@ DM_PROPERTY_EXTERN(rmtp_Script);
+ DM_PROPERTY_U32(rmtp_LuaMem, 0, PROFILE_PROPERTY_FRAME_RESET, "kb", &rmtp_Script); // kilo bytes
+ DM_PROPERTY_U32(rmtp_LuaRefs, 0, PROFILE_PROPERTY_FRAME_RESET, "# Lua references", &rmtp_Script);
+ 
++DM_PROPERTY_F32(rmtp_FrameTime, 0.0f, PROFILE_PROPERTY_FRAME_RESET, "ms", &rmtp_Script);
++DM_PROPERTY_F32(rmtp_SmoothedFrameTime, 0.0f, PROFILE_PROPERTY_FRAME_RESET, "ms", &rmtp_Script);
++
+ namespace dmEngine
+ {
+ #if !(defined(DM_PLATFORM_VENDOR))
+@@ -325,6 +329,11 @@ namespace dmEngine
+         m_AccumFrameTime = 0;
+         m_PreviousFrameTime = dmTime::GetMonotonicTime();
+         m_HttpCache = 0;
++
++        // Initialize time step smoothing
++        memset(m_TimeHistory, 0, sizeof(m_TimeHistory));
++        m_TimeHistoryIndex = 0;
++        m_TimeHistoryCount = 0;
+     }
+ 
+     HEngine New(dmEngineService::HEngineService engine_service)
+@@ -1074,6 +1083,7 @@ namespace dmEngine
+ 
+         engine->m_FixedUpdateFrequency = dmConfigFile::GetInt(engine->m_Config, "engine.fixed_update_frequency", 60);
+         engine->m_MaxTimeStep = dmConfigFile::GetFloat(engine->m_Config, "engine.max_time_step", 0.5);
++        engine->m_TimeStepSmoothing = dmConfigFile::GetInt(engine->m_Config, "engine.time_step_smoothing", 1) != 0;
+ 
+         dmGameSystem::OnWindowCreated(physical_width, physical_height);
+ 
+@@ -2025,6 +2035,49 @@ bail:
+         engine->m_Stats.m_TotalTime += dt;
+     }
+ 
++    static float SmoothFrameTime(HEngine engine, float frame_dt)
++    {
++        if (!engine->m_TimeStepSmoothing)
++        {
++            return frame_dt;
++        }
++
++        // Add current frame time to history
++        engine->m_TimeHistory[engine->m_TimeHistoryIndex] = frame_dt;
++        engine->m_TimeHistoryIndex = (engine->m_TimeHistoryIndex + 1) % Engine::TIME_HISTORY_SIZE;
++        
++        if (engine->m_TimeHistoryCount < Engine::TIME_HISTORY_SIZE)
++        {
++            engine->m_TimeHistoryCount++;
++            return frame_dt;
++        }
++
++        // Copy history for sorting
++        float sorted_times[Engine::TIME_HISTORY_SIZE];
++        memcpy(sorted_times, engine->m_TimeHistory, sizeof(sorted_times));
++
++        // Sort the array
++        std::sort(sorted_times, sorted_times + Engine::TIME_HISTORY_SIZE);
++
++        // Calculate mean of middle 7 values (exclude 2 lowest and 2 highest)
++        float sum = 0.0f;
++        for (uint32_t i = 2; i < Engine::TIME_HISTORY_SIZE - 2; ++i)
++        {
++            sum += sorted_times[i];
++        }
++        float mean = sum / 7.0f;
++
++        // Lerp from last frame time to calculated mean for additional smoothness
++        // Using a lerp factor of 0.1 for gentle smoothing
++        float lerp_factor = 0.1f;
++        float smoothed_frame_time = frame_dt + lerp_factor * (mean - frame_dt);
++
++        DM_PROPERTY_SET_F32(rmtp_FrameTime, frame_dt * 1000.0f);
++        DM_PROPERTY_SET_F32(rmtp_SmoothedFrameTime, smoothed_frame_time * 1000.0f);
++
++        return smoothed_frame_time;
++    }
++
+     static void CalcTimeStep(HEngine engine, float& step_dt, uint32_t& num_steps)
+     {
+         uint64_t time = dmTime::GetMonotonicTime();
+@@ -2038,6 +2091,9 @@ bail:
+             frame_dt = engine->m_MaxTimeStep;
+         }
+ 
++        // Apply time step smoothing (BitSquid algorithm)
++        frame_dt = SmoothFrameTime(engine, frame_dt);
++
+         // Variable frame rate
+         if (engine->m_UpdateFrequency == 0)
+         {
+diff --git a/engine/engine/src/engine_private.h b/engine/engine/src/engine_private.h
+index 32dcc0fc7f..37f1935d4b 100644
+--- a/engine/engine/src/engine_private.h
++++ b/engine/engine/src/engine_private.h
+@@ -172,6 +172,13 @@ namespace dmEngine
+         float                                       m_InvPhysicalHeight;
+         float                                       m_MaxTimeStep;
+ 
++        // Time step smoothing (BitSquid algorithm)
++        static const uint32_t                       TIME_HISTORY_SIZE = 11;
++        float                                       m_TimeHistory[TIME_HISTORY_SIZE];
++        uint32_t                                    m_TimeHistoryIndex;
++        uint32_t                                    m_TimeHistoryCount;
++        bool                                        m_TimeStepSmoothing;
++
+         RecordData                                  m_RecordData;
+     };
+ 
 diff --git a/engine/gameobject/src/gameobject/gameobject.cpp b/engine/gameobject/src/gameobject/gameobject.cpp
 index 4b7a35021d..bc405a65bd 100644
 --- a/engine/gameobject/src/gameobject/gameobject.cpp
