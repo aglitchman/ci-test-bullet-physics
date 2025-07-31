@@ -3,7 +3,7 @@
 set -e
 
 TARGET_DIR=$(pwd)
-cd /home/linux/defold-patch
+cd /home/linux/defold
 git diff --cached --binary > all.patch
 cp all.patch $TARGET_DIR/all.patch
 rm -f all.patch
