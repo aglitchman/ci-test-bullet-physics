@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
 
 env:
-  BUILD_BRANCH: 1.10.3
+  BUILD_BRANCH: 1.10.4
 
 jobs:
   pkg-win32-sdk:

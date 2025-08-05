@@ -12,7 +12,7 @@ on:
       - main
 
 env:
-  BUILD_BRANCH: 1.10.3
+  BUILD_BRANCH: 1.10.4
 
 jobs:
   bld-eng-web:

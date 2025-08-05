@@ -13,7 +13,7 @@ on:
 
 env:
   DM_PACKAGES_URL: ./local_sdks
-  BUILD_BRANCH: 1.10.3
+  BUILD_BRANCH: 1.10.4
   # Settings / Secrets and variables / Actions / Variables (tab) -> 
   #   New repository variable -> 
   #   `WIN32_SDK_RUN_ID` = copy-paste from the run id of the `package-win32-sdk.yml` run, i.e.
